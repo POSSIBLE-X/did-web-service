@@ -1,18 +1,9 @@
-# MERLOT DID Service
-The DID service is a microservice in the MERLOT marketplace which handles:
-- Provision of a new did:web and a new key pair that can be used for signing and verification.
-  - The service manages the did:web along with a generated certificate containing the public key.
+# POSSIBLE DID Web Service
+The DID Web service is a microservice in the POSSIBLE dataspace which handles:
+- Provision of a new did:web that can be used for signing and verification.
 - Provision of the DID document for a did:web that the service manages.
-  - Currently, the DID document lists one verification method that refers to the generated private key (as well as optionally a second method for a common public key).
+  - Currently, the DID document lists one verification method that refers to the common public key.
 - Provision of the certificate associated with a did:web that the service manages.
-
-At the moment, the DID service handles only did:web!
-
-## Development
-
-To start development for the MERLOT marketplace, please refer to [this document](https://github.com/merlot-education/.github/blob/main/Docs/DevEnv.md)
-to set up a local WSL development environment of all relevant services.
-This is by far the easiest way to get everything up and running locally.
 
 ## Structure
 
@@ -25,37 +16,6 @@ This is by far the easiest way to get everything up and running locally.
 │   ├── service         # internal services for processing data from the controller layer
 ```
 
-REST API related models such as the DTOs can be found at [models-lib](https://github.com/merlot-education/models-lib/tree/main)
-which is shared amongst the microservices.
-
-## Dependencies
-- rabbitmq (rabbitmq:3-management)
-
-## Build
-
-To build this microservice you need to provide a GitHub read-only token in order to be able to fetch maven packages from
-GitHub. You can create this token at https://github.com/settings/tokens with at least the scope "read:packages".
-Then set up your ~/.m2/settings.xml file as follows:
-
-    <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
-
-        <servers>
-            <server>
-                <id>github</id>
-                <username>REPLACEME_GITHUB_USER</username>
-                <!-- Public token with `read:packages` scope -->
-                <password>REPLACEME_GITHUB_TOKEN</password>
-            </server>
-        </servers>
-    </settings>
-
-Afterward you can build the service with
-
-    mvn clean package
-
 ## Configuration
 
 For a full list of configuration options (including Spring/JPA options) please see the 
@@ -66,8 +26,8 @@ For a full list of configuration options (including Spring/JPA options) please s
 | server.port                        | Sets the https port under which the service will run                                                                                     | 443   |
 | did-domain                         | Domain of the server hosting this DID-Service, used to reference it in the did documents                                                 |   localhost    |
 | certificate-issuer                 | Issuer that will be set in the self-generated certificates                                                                               |  MERLOT Federation     |
-| merlot-cert-path                   | (optional) path to a certificate that should be listed in all generated did documents (e.g. for a common public key within a federation) ||
-| merlot-verification-method-enabled | flag to use the above mentioned common certificate in the did documents                                                                  | false |
+| common-cert-path                   | (optional) path to a certificate that should be listed in all generated did documents (e.g. for a common public key within a federation) ||
+| common-verification-method-enabled | flag to use the above mentioned common certificate in the did documents                                                                  | false |
 
 
 
