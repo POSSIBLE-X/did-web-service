@@ -16,15 +16,10 @@
 
 package eu.possiblex.didwebservice;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eu.possiblex.didwebservice.controller.DidController;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.exceptions.*;
 import eu.possiblex.didwebservice.service.DidService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -53,12 +48,6 @@ class DidControllerTests {
 
     @BeforeEach
     public void beforeEach() throws Exception {
-
-        ParticipantDidTo dto = new ParticipantDidTo();
-        ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();
-
-        lenient().when(didService.generateParticipantDidWeb(any())).thenReturn(dto);
-        lenient().when(didService.generateParticipantDidWeb(emptyRequest)).thenThrow(RequestArgumentException.class);
 
         lenient().when(didService.getDidDocument(any())).thenReturn("did document");
         lenient().when(didService.getDidDocument("unknown-participant")).thenThrow(ParticipantNotFoundException.class);
@@ -123,43 +112,5 @@ class DidControllerTests {
         mvc.perform(MockMvcRequestBuilders.get("/participant/unknown-participant/cert.ss.pem")
                 .contentType(MediaType.APPLICATION_JSON).accept(MediaType.parseMediaType("application/x-x509-ca-cert")))
             .andDo(print()).andExpect(status().isNotFound());
-    }
-
-    @Test
-    @Disabled("Currently did should not get generated using HTTP API")
-    void generateDidAndPrivateKeyOk() throws Exception {
-
-        mvc.perform(MockMvcRequestBuilders.post("/generateDidAndPrivateKey").contentType(MediaType.APPLICATION_JSON)
-                .content(objectAsJsonString(getValidCreateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    @Disabled("Currently did should not get generated using HTTP API")
-    void generateDidAndPrivateKeyBadRequest() throws Exception {
-
-        mvc.perform(MockMvcRequestBuilders.post("/generateDidAndPrivateKey").contentType(MediaType.APPLICATION_JSON)
-                .content(objectAsJsonString(getEmptyCreateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
-            .andExpect(status().isBadRequest());
-    }
-
-    private ParticipantDidCreateRequestTo getEmptyCreateRequest() {
-
-        return new ParticipantDidCreateRequestTo();
-    }
-
-    private ParticipantDidCreateRequestTo getValidCreateRequest() {
-        ParticipantDidCreateRequestTo to = new ParticipantDidCreateRequestTo();
-        to.setSubject("valid");
-        return to;
-    }
-
-    private String objectAsJsonString(final Object obj) {
-
-        try {
-            return JsonMapper.builder().addModule(new JavaTimeModule()).build().writeValueAsString(obj);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
