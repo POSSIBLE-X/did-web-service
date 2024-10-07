@@ -107,13 +107,7 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
-     * Generates a did:web. Returns the did:web, the verification method as
-     * well as the associated private key and stores the certificate.
-     * NOTE: currently MERLOT is no longer using the generated private/public key pair as it switched
-     * to using the Federation Let's Encrypt certificate for signature. For future extensions this old key pair is
-     * left in the code.
-     *
-     * TODO update description
+     * Generates a did:web. Returns the did:web and the verification method.
      *
      * @param request with information needed for certificate generation
      * @return dto containing the generated did:web, the verification method and the associated private key
