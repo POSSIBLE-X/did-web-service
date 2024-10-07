@@ -25,7 +25,7 @@ import java.security.cert.CertificateException;
 public interface DidService {
 
     /**
-     * Returns a certificate for the MERLOT federation.
+     * Returns a certificate for the federation.
      *
      * @return the certificate
      */
@@ -53,5 +53,5 @@ public interface DidService {
      * @return dto containing the generated did:web and private key
      */
     ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
-        throws PemConversionException, RequestArgumentException;
+        throws RequestArgumentException;
 }

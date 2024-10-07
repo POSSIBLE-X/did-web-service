@@ -119,7 +119,7 @@ public class DidServiceImpl implements DidService {
      * @return dto containing the generated did:web, the verification method and the associated private key
      */
     public ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
-        throws PemConversionException, RequestArgumentException {
+        throws RequestArgumentException {
 
         String certificateSubject = request.getSubject();
 
@@ -157,8 +157,7 @@ public class DidServiceImpl implements DidService {
         participantDidDataRepository.save(cert);
     }
 
-    private ParticipantDidTo createParticipantDidPrivateKeyDto(String did)
-        throws PemConversionException {
+    private ParticipantDidTo createParticipantDidPrivateKeyDto(String did) {
 
         ParticipantDidTo dto = new ParticipantDidTo();
         dto.setDid(did);
@@ -275,7 +274,7 @@ public class DidServiceImpl implements DidService {
                 "Certificate input stream is null.").readAllBytes(),
                 StandardCharsets.UTF_8);
         } catch (IOException | NullPointerException e) {
-            throw new CertificateException("Failed to read merlot certificate. " + e.getMessage());
+            throw new CertificateException("Failed to read common certificate. " + e.getMessage());
         }
     }
 }

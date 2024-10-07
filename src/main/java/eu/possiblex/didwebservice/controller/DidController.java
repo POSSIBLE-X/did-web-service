@@ -65,7 +65,7 @@ public class DidController {
     }
 
     /**
-     * GET endpoint for retrieving the DID document for the MERLOT federation.
+     * GET endpoint for retrieving the DID document for the federation.
      *
      * @return Common DID document
      */
@@ -80,7 +80,7 @@ public class DidController {
     }
 
     /**
-     * GET endpoint for retrieving the certificate for the MERLOT federation.
+     * GET endpoint for retrieving the certificate for the federation.
      *
      * @return Common certificate
      */

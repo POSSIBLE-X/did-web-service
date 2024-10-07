@@ -62,6 +62,6 @@ management:
     health:
       enabled: true
 
-did-domain: "localhost"
+did-domain: "localhost:4443"
 
 common-cert-path: ""

@@ -56,14 +56,9 @@ class DidControllerTests {
 
         ParticipantDidTo dto = new ParticipantDidTo();
         ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();
-        ParticipantDidCreateRequestTo request1 = getCreateRequestCryptoAssetGenException();
-        ParticipantDidCreateRequestTo request2 = getCreateRequestPemConversionException();
 
         lenient().when(didService.generateParticipantDidWeb(any())).thenReturn(dto);
         lenient().when(didService.generateParticipantDidWeb(emptyRequest)).thenThrow(RequestArgumentException.class);
-        lenient().when(didService.generateParticipantDidWeb(request1))
-            .thenThrow(CryptographicAssetGenerationException.class);
-        lenient().when(didService.generateParticipantDidWeb(request2)).thenThrow(PemConversionException.class);
 
         lenient().when(didService.getDidDocument(any())).thenReturn("did document");
         lenient().when(didService.getDidDocument("unknown-participant")).thenThrow(ParticipantNotFoundException.class);
@@ -109,21 +104,14 @@ class DidControllerTests {
     }
 
     @Test
-    void getCertificateOk() throws Exception {
-
-        mvc.perform(MockMvcRequestBuilders.get("/participant/any/cert.ss.pem")
-            .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isOk());
-    }
-
-    @Test
-    void getMerlotCertificateOk() throws Exception {
+    void getCommonCertificateOk() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
                 .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isOk());
     }
 
     @Test
-    void getMerlotCertificateReadFail() throws Exception {
+    void getCommonCertificateReadFail() throws Exception {
         when(didService.getCommonCertificate()).thenThrow(new CertificateException("failed to read cert"));
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
                 .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isInternalServerError());
@@ -148,42 +136,11 @@ class DidControllerTests {
 
     @Test
     @Disabled("Currently did should not get generated using HTTP API")
-    void generateDidAndPrivateKeyInternalServerError1() throws Exception {
-
-        mvc.perform(MockMvcRequestBuilders.post("/generateDidAndPrivateKey").contentType(MediaType.APPLICATION_JSON)
-                .content(objectAsJsonString(getCreateRequestCryptoAssetGenException())).accept(MediaType.APPLICATION_JSON))
-            .andDo(print()).andExpect(status().isInternalServerError());
-    }
-
-    @Test
-    @Disabled("Currently did should not get generated using HTTP API")
-    void generateDidAndPrivateKeyInternalServerError2() throws Exception {
-
-        mvc.perform(MockMvcRequestBuilders.post("/generateDidAndPrivateKey").contentType(MediaType.APPLICATION_JSON)
-                .content(objectAsJsonString(getCreateRequestPemConversionException())).accept(MediaType.APPLICATION_JSON))
-            .andDo(print()).andExpect(status().isInternalServerError());
-    }
-
-    @Test
-    @Disabled("Currently did should not get generated using HTTP API")
     void generateDidAndPrivateKeyBadRequest() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.post("/generateDidAndPrivateKey").contentType(MediaType.APPLICATION_JSON)
                 .content(objectAsJsonString(getEmptyCreateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
             .andExpect(status().isBadRequest());
-    }
-
-    private ParticipantDidCreateRequestTo getCreateRequestPemConversionException() {
-
-        ParticipantDidCreateRequestTo to = new ParticipantDidCreateRequestTo();
-        to.setSubject("pem conversion exception");
-        return to;
-    }
-
-    private ParticipantDidCreateRequestTo getCreateRequestCryptoAssetGenException() {
-        ParticipantDidCreateRequestTo to = new ParticipantDidCreateRequestTo();
-        to.setSubject("cryptographic asset generation exception");
-        return to;
     }
 
     private ParticipantDidCreateRequestTo getEmptyCreateRequest() {
