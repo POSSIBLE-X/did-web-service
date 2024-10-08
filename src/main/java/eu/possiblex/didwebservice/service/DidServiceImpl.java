@@ -28,6 +28,7 @@ import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
 import eu.possiblex.didwebservice.models.exceptions.*;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 
 @Service
+@Slf4j
 public class DidServiceImpl implements DidService {
     private static final String VM_TYPE_ID = "#JWK2020-PossibleLetsEncrypt";
     private static final String VM_TYPE = "JsonWebKey2020";
@@ -145,10 +147,14 @@ public class DidServiceImpl implements DidService {
 
     private void storeDidDocument(String did) {
 
-        ParticipantDidData cert = new ParticipantDidData();
-        cert.setDid(did);
+        if (participantDidDataRepository.findByDid(did) != null) {
+            log.info("Did {} already exists in the database.", did);
+            return;
+        }
+        ParticipantDidData data = new ParticipantDidData();
+        data.setDid(did);
 
-        participantDidDataRepository.save(cert);
+        participantDidDataRepository.save(data);
     }
 
     private ParticipantDidTo createParticipantDidPrivateKeyDto(String did) {
