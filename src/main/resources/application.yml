@@ -26,7 +26,6 @@ spring:
     username: sa
     password:
     driverClassName: org.h2.Driver
-    initialization-mode: always
   jackson:
     mapper:
       DEFAULT_VIEW_INCLUSION: true
@@ -39,19 +38,12 @@ spring:
         show_sql: false
         use_sql_comments: true
         format_sql: true
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
-  cloud:
-    bus:
-      enabled: true
-      refresh:
-        enabled: true
+  sql:
+    init:
+      mode: always
 
 server:
-  port: 443
+  port: 4443
   error:
     include-stacktrace: "never"
   ssl:
@@ -60,8 +52,6 @@ server:
     key-store-type: PKCS12
     key-alias: tomcat
     enabled: true
-  http:
-    port: 8088
 
 management:
   endpoints:
@@ -72,15 +62,6 @@ management:
     health:
       enabled: true
 
-did-domain: "localhost"
+did-domain: "localhost:4443"
 
-cors:
-  global:
-    origins:
-    patterns: >
-      http://localhost:[*]
-
-certificate-issuer: "MERLOT Federation"
-
-merlot-cert-path: ""
-merlot-verification-method-enabled: false
+common-cert-path: ""

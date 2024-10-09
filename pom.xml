@@ -17,11 +17,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>eu.merlot-education</groupId>
-	<artifactId>did-service</artifactId>
+	<groupId>eu.possiblex</groupId>
+	<artifactId>did-web-service</artifactId>
 	<version>2.1.0</version>
-	<name>did-service</name>
-	<description>DID service</description>
+	<name>did-web-service</name>
+	<description>DID Web service</description>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -36,14 +36,6 @@
 		<repository>
 			<id>central</id>
 			<url>https://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>github</id>
-			<name>GitHub MERLOT Education</name>
-			<url>https://maven.pkg.github.com/merlot-education/*</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
 		</repository>
 	</repositories>
 	<dependencies>
@@ -93,18 +85,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>eu.merloteducation.modelslib</groupId>
-			<artifactId>modelslib</artifactId>
-			<version>0.4.4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-bus-amqp</artifactId>
-			<version>4.1.2</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
@@ -113,6 +93,11 @@
 			<groupId>org.jacoco</groupId>
 			<artifactId>jacoco-maven-plugin</artifactId>
 			<version>0.8.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
