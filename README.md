@@ -32,3 +32,17 @@ For a full list of configuration options (including Spring/JPA options) please s
 ## Run
     # note that sudo is needed on most systems to bind to the port 443 for https
     sudo java -jar target/did-web-service-X.Y.Z.jar
+
+
+## Endpoints
+
+The following endpoints are made available by the DID service:
+
+
+| Endpoint         | Description                                                                                                              |
+|------------------|--------------------------------------------------------------------------------------------------------------------------|
+| /internal/didweb/generate       | internal non-public endpoint that generates a new did-web identity on demand given the subject in the POST request body  |
+| /participant/{id}/did.json      | returns the DID document for a given participant id                                                                      |
+| /.well-known/did.json | returns a common did document for the dataspace federation identity                                                      |
+| /.well-known/cert.ss.pem | returns a common certificate for the dataspace federation identity (currently referenced in all generated did documents) |
+
