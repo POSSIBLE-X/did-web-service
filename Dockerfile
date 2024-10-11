@@ -20,4 +20,6 @@ FROM eclipse-temurin:17-jre-alpine
 COPY --from=build /opt/target/did-service-*.jar /opt/did-service.jar
 EXPOSE 8088
 EXPOSE 8443
+RUN mkdir /app
+WORKDIR /app
 ENTRYPOINT ["java","-jar","/opt/did-service.jar"]
