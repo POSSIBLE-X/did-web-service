@@ -21,5 +21,5 @@ EXPOSE 8088
 EXPOSE 8443
 RUN mkdir /app
 WORKDIR /app
-COPY --from=build /opt/target/did-service-*.jar /app/did-service.jar
-ENTRYPOINT ["java","-jar","/app/did-service.jar"]
+COPY --from=build /opt/target/did-web-service-*.jar /app/did-web-service.jar
+ENTRYPOINT ["java","-jar","/app/did-web-service.jar"]
