@@ -22,4 +22,4 @@ EXPOSE 8443
 RUN mkdir /app
 WORKDIR /app
 COPY --from=build /opt/target/did-service-*.jar /app/did-service.jar
-ENTRYPOINT ["java","-jar","/opt/did-service.jar"]
+ENTRYPOINT ["java","-jar","/app/did-service.jar"]
