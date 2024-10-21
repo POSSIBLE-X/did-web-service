@@ -16,7 +16,7 @@
 
 package eu.possiblex.didwebservice;
 
-import eu.possiblex.didwebservice.controller.DidController;
+import eu.possiblex.didwebservice.controller.DidControllerImpl;
 import eu.possiblex.didwebservice.models.exceptions.*;
 import eu.possiblex.didwebservice.service.DidService;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({ DidController.class })
+@WebMvcTest({ DidControllerImpl.class })
 @AutoConfigureMockMvc
 class DidControllerTests {
     @MockBean
