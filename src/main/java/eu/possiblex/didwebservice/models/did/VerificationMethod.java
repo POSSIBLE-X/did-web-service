@@ -25,12 +25,16 @@ import java.util.List;
 
 @Getter
 @Setter
-@JsonPropertyOrder({"@context", "id", "type", "controller", "publicKeyJwk"})
+@JsonPropertyOrder({ "@context", "id", "type", "controller", "publicKeyJwk" })
 public class VerificationMethod {
     @JsonProperty("@context")
-    private List<String> context;
+    private List<String> context = List.of("https://w3c-ccg.github.io/lds-jws2020/contexts/v1/");
+
     private String id;
-    private String type;
+
+    private String type = "JsonWebKey2020";
+
     private String controller;
+
     private PublicJwk publicKeyJwk;
 }

@@ -21,14 +21,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
-@JsonPropertyOrder({"@context", "id", "verificationMethod"})
+@JsonPropertyOrder({ "@context", "id", "verificationMethod" })
 public class DidDocument {
     @JsonProperty("@context")
-    private List<String> context;
+    private List<String> context = List.of("https://www.w3.org/ns/did/v1",
+        "https://w3id.org/security/suites/jws-2020/v1");
+
     private String id;
-    private List<VerificationMethod> verificationMethod;
+
+    private List<VerificationMethod> verificationMethod = new ArrayList<>();
 }

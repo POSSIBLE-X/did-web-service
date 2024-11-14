@@ -16,6 +16,7 @@
 
 package eu.possiblex.didwebservice.service;
 
+import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.exceptions.*;
@@ -29,7 +30,7 @@ public interface DidService {
      *
      * @return the certificate
      */
-    String getCommonCertificate() throws CertificateException;
+    String getCommonCertificate();
 
     /**
      * Returns the DID document for a given id.
@@ -37,14 +38,14 @@ public interface DidService {
      * @param id id to retrieve the DID document with
      * @return the did document as string
      */
-    String getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException;
+    DidDocument getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException;
 
     /**
      * Returns the DID document for the MERLOT federation.
      *
      * @return the did document as string
      */
-    String getCommonDidDocument() throws DidDocumentGenerationException;
+    DidDocument getCommonDidDocument() throws DidDocumentGenerationException;
 
     /**
      * Generates a did:web, a key pair and certificate. Returns the did:web and private key.

@@ -20,10 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
+import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import eu.possiblex.didwebservice.service.DidServiceImpl;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,16 +33,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,7 +53,7 @@ class DidServiceTests {
     private ParticipantDidDataRepository participantDidDataRepository;
 
     @Captor
-    private ArgumentCaptor<ParticipantDidData> certificateArgumentCaptor;
+    private ArgumentCaptor<ParticipantDidDataEntity> certificateArgumentCaptor;
 
     @BeforeEach
     public void setUp() {
@@ -85,7 +74,7 @@ class DidServiceTests {
         assertTrue(dto.getDid().matches(didRegex));
 
         verify(participantDidDataRepository).save(certificateArgumentCaptor.capture());
-        ParticipantDidData participant = certificateArgumentCaptor.getValue();
+        ParticipantDidDataEntity participant = certificateArgumentCaptor.getValue();
 
         assertTrue(participant.getDid().matches(didRegex));
     }
@@ -104,8 +93,8 @@ class DidServiceTests {
         String expectedJsonString = getTestDidDocumentJsonString();
         DidDocument expected = mapper.readValue(expectedJsonString, DidDocument.class);
 
-        ParticipantDidData participantDidData = getTestParticipantCertificate();
-        when(participantDidDataRepository.findByDid(any())).thenReturn(participantDidData);
+        ParticipantDidDataEntity participantDidDataEntity = getTestParticipantCertificate();
+        when(participantDidDataRepository.findByDid(any())).thenReturn(participantDidDataEntity);
 
         String actualJsonString = didService.getDidDocument("foo");
         DidDocument actual = mapper.readValue(actualJsonString, DidDocument.class);
@@ -119,12 +108,12 @@ class DidServiceTests {
         assertNotNull(commonDidDocument);
     }
 
-    private ParticipantDidData getTestParticipantCertificate() {
+    private ParticipantDidDataEntity getTestParticipantCertificate() {
 
-        ParticipantDidData participantDidData = new ParticipantDidData();
-        participantDidData.setDid(
+        ParticipantDidDataEntity participantDidDataEntity = new ParticipantDidDataEntity();
+        participantDidDataEntity.setDid(
             "did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3");
-        return participantDidData;
+        return participantDidDataEntity;
     }
 
     private String getTestDidDocumentJsonString() {

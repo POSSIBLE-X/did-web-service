@@ -18,65 +18,93 @@ package eu.possiblex.didwebservice.service;
 
 import ch.qos.logback.core.util.StringUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.did.PublicJwk;
 import eu.possiblex.didwebservice.models.did.VerificationMethod;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
-import eu.possiblex.didwebservice.models.exceptions.*;
+import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
+import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
+import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.models.exceptions.PemConversionException;
+import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
 public class DidServiceImpl implements DidService {
-    private static final String VM_TYPE_ID = "#JWK2020-PossibleLetsEncrypt";
-    private static final String VM_TYPE = "JsonWebKey2020";
-    private static final String VM_CONTEXT = "https://w3c-ccg.github.io/lds-jws2020/contexts/v1/";
 
     private final ParticipantDidDataRepository participantDidDataRepository;
 
-    private final ObjectMapper objectMapper;
+    private final String serviceDomain;
 
-    private final String didDomain;
-
-    private final String defaultCertPath;
+    private final String commonCertificateString;
 
     public DidServiceImpl(@Value("${common-cert-path:#{null}}") String defaultCertPath,
-                          @Value("${did-domain}") String didDomain,
-                          @Autowired ObjectMapper objectMapper,
-                          @Autowired ParticipantDidDataRepository participantDidDataRepository
-        ) {
+        @Value("${did-domain}") String serviceDomain,
+        @Autowired ParticipantDidDataRepository participantDidDataRepository) throws CertificateException {
 
-        this.defaultCertPath = defaultCertPath;
-        this.didDomain = didDomain;
-        this.objectMapper = objectMapper;
+        this.serviceDomain = serviceDomain;
         this.participantDidDataRepository = participantDidDataRepository;
+        this.commonCertificateString = getCommonCertificatePemString(defaultCertPath);
+    }
+
+    /**
+     * Given a valid did:web, return the resulting URI to the did document. See <a
+     * href="https://w3c-ccg.github.io/did-method-web/#read-resolve">did-web specification</a> for reference.
+     *
+     * @param didWeb did:web
+     * @return did web URI
+     */
+    private static String getDidDocumentUri(String didWeb) {
+
+        boolean containsSubpath = didWeb.contains(":");
+        StringBuilder didDocumentUriBuilder = new StringBuilder();
+        didDocumentUriBuilder.append(didWeb.replace("did:web:", "") // remove prefix
+            .replace(":", "/") // Replace ":" with "/" in the method specific identifier to
+            // obtain the fully qualified domain name and optional path.
+            .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
+
+        // Generate an HTTPS URL to the expected location of the DID document by prepending https://.
+        didDocumentUriBuilder.insert(0, "https://");
+        if (!containsSubpath) {
+            // If no path has been specified in the URL, append /.well-known.
+            didDocumentUriBuilder.append("/.well-known");
+        }
+        // Append /did.json to complete the URL.
+        didDocumentUriBuilder.append("/did.json");
+
+        return didDocumentUriBuilder.toString();
     }
 
     /**
      * Get the content of the federation-wide common certificate in PEM format.
      *
      * @return common certificate
-     * @throws CertificateException error during reading the certificate from disk
      */
     @Override
-    public String getCommonCertificate() throws CertificateException {
-        return getCommonCertificatePemString();
+    public String getCommonCertificate() {
+
+        return commonCertificateString;
     }
 
     /**
@@ -88,19 +116,18 @@ public class DidServiceImpl implements DidService {
      * @throws DidDocumentGenerationException failed to build did document from database data
      */
     @Override
-    @Transactional
-    public String getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException {
+    public DidDocument getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException {
 
         String didWeb = getDidWebForParticipant(id);
 
-        ParticipantDidData participantDidData = participantDidDataRepository.findByDid(didWeb);
+        ParticipantDidDataEntity participantDidDataEntity = participantDidDataRepository.findByDid(didWeb);
 
-        if (participantDidData == null) {
+        if (participantDidDataEntity == null) {
             throw new ParticipantNotFoundException("Participant could not be found.");
         }
 
         try {
-            return createDidDocument(participantDidData);
+            return createDidDocument(participantDidDataEntity);
         } catch (Exception e) {
             throw new DidDocumentGenerationException(e.getMessage());
         }
@@ -113,9 +140,10 @@ public class DidServiceImpl implements DidService {
      * @throws DidDocumentGenerationException failed to build did document from database data
      */
     @Override
-    public String getCommonDidDocument() throws DidDocumentGenerationException {
+    public DidDocument getCommonDidDocument() throws DidDocumentGenerationException {
+
         try {
-            ParticipantDidData federationCert = new ParticipantDidData();
+            ParticipantDidDataEntity federationCert = new ParticipantDidDataEntity();
             federationCert.setDid(getCommonDidWeb());
             return createDidDocument(federationCert);
         } catch (CertificateException | JsonProcessingException | PemConversionException e) {
@@ -175,12 +203,12 @@ public class DidServiceImpl implements DidService {
      */
     private String getCommonDidWeb() {
 
-        return "did:web:" + didDomain.replaceFirst(":", "%3A");
+        return "did:web:" + serviceDomain.replaceFirst(":", "%3A");
     }
 
     /**
-     * Create a new database entry for the given did if it does not already exist.
-     * If it already exists, log it and do nothing.
+     * Create a new database entry for the given did if it does not already exist. If it already exists, log it and do
+     * nothing.
      *
      * @param did did to store in the database
      */
@@ -190,7 +218,7 @@ public class DidServiceImpl implements DidService {
             log.info("Did {} already exists in the database.", did);
             return;
         }
-        ParticipantDidData data = new ParticipantDidData();
+        ParticipantDidDataEntity data = new ParticipantDidDataEntity();
         data.setDid(did);
 
         participantDidDataRepository.save(data);
@@ -206,7 +234,8 @@ public class DidServiceImpl implements DidService {
 
         ParticipantDidTo dto = new ParticipantDidTo();
         dto.setDid(did);
-        dto.setVerificationMethod(did + VM_TYPE_ID);
+        // TODO update to include all verification methods
+        dto.setVerificationMethod(did + "#JWK2020-PossibleLetsEncrypt");
 
         return dto;
     }
@@ -214,54 +243,65 @@ public class DidServiceImpl implements DidService {
     /**
      * Given a database entry for a participant, build the corresponding did document.
      *
-     * @param participantDidData participant data to build the did document for
+     * @param participantDidDataEntity participant data to build the did document for
      * @return JSON string representation of the did document
      * @throws JsonProcessingException failed to convert the did document to JSON
      * @throws PemConversionException failed to convert the certificate to a public key
      * @throws CertificateException failed to load the common certificate
      */
-    private String createDidDocument(ParticipantDidData participantDidData)
+    private DidDocument createDidDocument(ParticipantDidDataEntity participantDidDataEntity)
         throws JsonProcessingException, PemConversionException, CertificateException {
 
         // get did identifier from db data
-        String didWebParticipant = participantDidData.getDid();
+        String didWebParticipant = participantDidDataEntity.getDid();
 
         // build did document
         DidDocument didDocument = new DidDocument();
-        didDocument.setContext(List.of("https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/jws-2020/v1"));
         didDocument.setId(didWebParticipant);
-        didDocument.setVerificationMethod(new ArrayList<>());
 
+        for (VerificationMethodEntity vmEntity : participantDidDataEntity.getVerificationMethods()) {
+            String certificateUrl = getDidDocumentUri(didWebParticipant).replace("did.json",
+                vmEntity.getCertificateId());
+            didDocument.getVerificationMethod().add(
+                getVerificationMethod(didWebParticipant, vmEntity.getVerificationMethodId(), certificateUrl,
+                    vmEntity.getCertificate()));
+        }
         // add common federation verification method
-        VerificationMethod commonVerificationMethod = getVerificationMethod(getCommonDidWeb(), getCommonCertificatePemString());
-        commonVerificationMethod.setId(didWebParticipant + VM_TYPE_ID);
-        didDocument.getVerificationMethod().add(commonVerificationMethod);
+        didDocument.getVerificationMethod()
+            .add(getCommonVerificationMethod(didWebParticipant + "#JWK2020-PossibleLetsEncrypt"));
 
-        // Return JSON string converted the DID object
-        return objectMapper.writeValueAsString(didDocument);
+        return didDocument;
+    }
+
+    private VerificationMethod getCommonVerificationMethod(String verificationMethodId) throws PemConversionException {
+
+        String controller = getCommonDidWeb();
+        String certificateUrl = getDidDocumentUri(getCommonDidWeb()).replace("did.json", "cert.ss.pem");
+        return getVerificationMethod(controller, verificationMethodId, certificateUrl, commonCertificateString);
     }
 
     /**
      * Build the verification method for a given did identifier and string representation of a certificate.
      *
-     * @param didWeb did-web identifier
-     * @param certificate certificate in PEM format
+     * @param controller verification method controller
+     * @param verificationMethodId verification method identifier
+     * @param certificateUrl url to access the certificate
+     * @param certificateString certificate in PEM format
      * @return verification method
      * @throws PemConversionException failed to convert the certificate to a public key
      */
-    private VerificationMethod getVerificationMethod(String didWeb, String certificate) throws PemConversionException {
+    private VerificationMethod getVerificationMethod(String controller, String verificationMethodId,
+        String certificateUrl, String certificateString) throws PemConversionException {
 
         // setup verification method
         VerificationMethod vm = new VerificationMethod();
-        vm.setContext(List.of(VM_CONTEXT));
-        vm.setId(didWeb + VM_TYPE_ID);
-        vm.setType(VM_TYPE);
-        vm.setController(didWeb);
+        vm.setId(verificationMethodId);
+        vm.setController(controller);
 
         // load certificate from string
         X509Certificate x509Certificate;
         try {
-            x509Certificate = convertPemStringToCertificate(certificate);
+            x509Certificate = convertPemStringToCertificate(certificateString);
         } catch (CertificateException e) {
             throw new PemConversionException("Certificate conversion failed: " + e.getMessage());
         }
@@ -278,11 +318,6 @@ public class DidServiceImpl implements DidService {
         publicKeyJwk.setE(e);
         publicKeyJwk.setAlg("PS256");
 
-        // build url under which the certificate will be hosted
-        String didWebBase = didWeb.replace("did:web:", "") // remove did type prefix
-            .replaceFirst("#.*", ""); // remove verification method reference
-        String certificateUrl = getDidDocumentUri(didWebBase).replace("did.json", "cert.ss.pem");
-
         // set url reference to certificate in JWK
         publicKeyJwk.setX5u(certificateUrl);
 
@@ -290,34 +325,6 @@ public class DidServiceImpl implements DidService {
         vm.setPublicKeyJwk(publicKeyJwk);
 
         return vm;
-    }
-
-    /**
-     * Given the domain part of the did:web, return the resulting URI. See <a
-     * href="https://w3c-ccg.github.io/did-method-web/#read-resolve">did-web specification</a> for reference.
-     *
-     * @param didWeb did:web without prefix and key reference
-     * @return did web URI
-     */
-    private static String getDidDocumentUri(String didWeb) {
-
-        boolean containsSubpath = didWeb.contains(":");
-        StringBuilder didDocumentUriBuilder = new StringBuilder();
-        didDocumentUriBuilder.append(
-            didWeb.replace(":", "/") // Replace ":" with "/" in the method specific identifier to
-                // obtain the fully qualified domain name and optional path.
-                .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
-
-        // Generate an HTTPS URL to the expected location of the DID document by prepending https://.
-        didDocumentUriBuilder.insert(0, "https://");
-        if (!containsSubpath) {
-            // If no path has been specified in the URL, append /.well-known.
-            didDocumentUriBuilder.append("/.well-known");
-        }
-        // Append /did.json to complete the URL.
-        didDocumentUriBuilder.append("/did.json");
-
-        return didDocumentUriBuilder.toString();
     }
 
     /**
@@ -334,22 +341,23 @@ public class DidServiceImpl implements DidService {
 
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
-        return ((List<X509Certificate>) certFactory.generateCertificates(certStream)).stream()
-            .findFirst().orElse(null);
+        return ((List<X509Certificate>) certFactory.generateCertificates(certStream)).stream().findFirst().orElse(null);
     }
 
     /**
      * Load the common certificate from file.
      *
+     * @param defaultCertPath path to default certificate
      * @return string representation of certificate
      * @throws CertificateException error during loading of the certificate
      */
-    private String getCommonCertificatePemString() throws CertificateException {
-        try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath) ?
-            DidServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
+    private String getCommonCertificatePemString(String defaultCertPath) throws CertificateException {
+
+        try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath)
+            ? DidServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
             : new FileInputStream(defaultCertPath)) {
-            return new String(Objects.requireNonNull(certificateStream,
-                "Certificate input stream is null.").readAllBytes(),
+            return new String(
+                Objects.requireNonNull(certificateStream, "Certificate input stream is null.").readAllBytes(),
                 StandardCharsets.UTF_8);
         } catch (IOException | NullPointerException e) {
             throw new CertificateException("Failed to read common certificate. " + e.getMessage());

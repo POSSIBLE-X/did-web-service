@@ -16,20 +16,17 @@
 
 package eu.possiblex.didwebservice.controller;
 
+import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.service.DidService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.cert.CertificateException;
-
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 
@@ -37,31 +34,39 @@ public class DidControllerImpl implements DidController {
     private final DidService didService;
 
     public DidControllerImpl(@Autowired DidService didService) {
+
         this.didService = didService;
     }
 
     /**
      * GET endpoint for retrieving the DID document for given participant.
      *
-     * @param id id for retrieving the DID document
+     * @param participantId id for retrieving the DID document
      * @return participant DID document
      */
     @Override
-    public ResponseEntity<String> getDidDocument(@PathVariable(value = "id") String id) {
+    public DidDocument getDidDocument(@PathVariable(value = "participantId") String participantId) {
 
-        String didDocument;
         try {
-            didDocument = didService.getDidDocument(id);
+            return didService.getDidDocument(participantId);
         } catch (ParticipantNotFoundException e1) {
             throw new ResponseStatusException(NOT_FOUND, e1.getMessage());
         } catch (DidDocumentGenerationException e2) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR,
                 "Did document provision failed: " + e2.getMessage());
         }
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+    }
 
-        return new ResponseEntity<>(didDocument, httpHeaders, HttpStatus.OK);
+    /**
+     * GET endpoint for retrieving a particular certificate for a participant.
+     *
+     * @return specific participant certificate
+     */
+    @Override
+    public String getCertificate(@PathVariable(value = "participantId") String participantId,
+        @PathVariable(value = "certId") String certId) {
+
+        return didService.getCertificate(participantId, certId);
     }
 
     /**
@@ -70,12 +75,13 @@ public class DidControllerImpl implements DidController {
      * @return Common DID document
      */
     @Override
-    public String getCommonDidDocument() {
+    public DidDocument getCommonDidDocument() {
+
         try {
             return didService.getCommonDidDocument();
         } catch (DidDocumentGenerationException e) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR,
-                    "Did document provision failed: " + e.getMessage());
+                "Did document provision failed: " + e.getMessage());
         }
     }
 
@@ -85,12 +91,8 @@ public class DidControllerImpl implements DidController {
      * @return Common certificate
      */
     @Override
-    public String getCertificate() {
-        try {
-            return didService.getCommonCertificate();
-        } catch (CertificateException e) {
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Failed to load federation certificate.");
-        }
+    public String getCommonCertificate() {
 
+        return didService.getCommonCertificate();
     }
 }

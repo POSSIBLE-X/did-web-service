@@ -17,7 +17,8 @@
 package eu.possiblex.didwebservice;
 
 import eu.possiblex.didwebservice.controller.DidControllerImpl;
-import eu.possiblex.didwebservice.models.exceptions.*;
+import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.service.DidService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,14 +67,16 @@ class DidControllerTests {
     void getCommonDidDocumentOk() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/did.json").accept(MediaType.APPLICATION_JSON))
-                .andDo(print()).andExpect(status().isOk());
+            .andDo(print()).andExpect(status().isOk());
     }
 
     @Test
     void getCommonDidDocumentFailed() throws Exception {
-        when(didService.getCommonDidDocument()).thenThrow(new DidDocumentGenerationException("Failed to generate did document"));
+
+        when(didService.getCommonDidDocument()).thenThrow(
+            new DidDocumentGenerationException("Failed to generate did document"));
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/did.json").accept(MediaType.APPLICATION_JSON))
-                .andDo(print()).andExpect(status().isInternalServerError());
+            .andDo(print()).andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -96,18 +99,20 @@ class DidControllerTests {
     void getCommonCertificateOk() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
-                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isOk());
+            .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isOk());
     }
 
     @Test
     void getCommonCertificateReadFail() throws Exception {
+
         when(didService.getCommonCertificate()).thenThrow(new CertificateException("failed to read cert"));
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
-                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isInternalServerError());
+                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print())
+            .andExpect(status().isInternalServerError());
     }
 
     @Test
-    void getCertificateNotFound() throws Exception {
+    void getCommonCertificateNotFound() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/participant/unknown-participant/cert.ss.pem")
                 .contentType(MediaType.APPLICATION_JSON).accept(MediaType.parseMediaType("application/x-x509-ca-cert")))

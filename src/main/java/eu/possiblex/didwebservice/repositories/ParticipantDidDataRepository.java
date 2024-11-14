@@ -16,9 +16,9 @@
 
 package eu.possiblex.didwebservice.repositories;
 
-import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
+import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ParticipantDidDataRepository extends JpaRepository<ParticipantDidData, String> {
-    ParticipantDidData findByDid(String did);
+public interface ParticipantDidDataRepository extends JpaRepository<ParticipantDidDataEntity, String> {
+    ParticipantDidDataEntity findByDid(String did);
 }
