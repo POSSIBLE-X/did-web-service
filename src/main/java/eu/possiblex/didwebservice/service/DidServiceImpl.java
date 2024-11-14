@@ -30,6 +30,7 @@ import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException
 import eu.possiblex.didwebservice.models.exceptions.PemConversionException;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,10 +45,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -153,11 +151,12 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
-     * Generates a did:web. Returns the did:web and the verification method.
+     * Generates a did:web entry. Returns the did:web and the verification methods.
      *
      * @param request with information needed for certificate generation
-     * @return dto containing the generated did:web, the verification method and the associated private key
+     * @return dto containing the generated did:web and the verification methods
      */
+    @Transactional
     public ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
         throws RequestArgumentException {
 
@@ -169,8 +168,13 @@ public class DidServiceImpl implements DidService {
 
         String didWeb = generateDidWeb(certificateSubject);
 
-        storeDidDocument(didWeb);
-        return createParticipantDidPrivateKeyDto(didWeb);
+        ParticipantDidDataEntity entity = storeDidDocument(didWeb, request.getCertificates());
+        List<String> verificationMethodIds = new ArrayList<>();
+        verificationMethodIds.add(entity.getDid() + "#JWK2020-PossibleLetsEncrypt");
+        verificationMethodIds.addAll(
+            entity.getVerificationMethods().stream().map(vm -> entity.getDid() + "#" + vm.getCertificateId()).toList());
+
+        return new ParticipantDidTo(entity.getDid(), verificationMethodIds);
     }
 
     /**
@@ -212,32 +216,49 @@ public class DidServiceImpl implements DidService {
      *
      * @param did did to store in the database
      */
-    private void storeDidDocument(String did) {
+    private ParticipantDidDataEntity storeDidDocument(String did, Map<String, String> certificates)
+        throws RequestArgumentException {
 
-        if (participantDidDataRepository.findByDid(did) != null) {
+        ParticipantDidDataEntity data = participantDidDataRepository.findByDid(did);
+        if (data != null) {
             log.info("Did {} already exists in the database.", did);
-            return;
+            return data;
         }
-        ParticipantDidDataEntity data = new ParticipantDidDataEntity();
+        data = new ParticipantDidDataEntity();
         data.setDid(did);
 
-        participantDidDataRepository.save(data);
+        List<VerificationMethodEntity> verificationMethods = getVerificationMethodEntities(certificates);
+
+        data.setVerificationMethods(verificationMethods);
+
+        return participantDidDataRepository.save(data);
     }
 
-    /**
-     * Generate a DTO containing the did and the verification method for a given did.
-     *
-     * @param did did to generate the DTO for
-     * @return DTO containing the did and the verification method
-     */
-    private ParticipantDidTo createParticipantDidPrivateKeyDto(String did) {
+    private List<VerificationMethodEntity> getVerificationMethodEntities(Map<String, String> certificates)
+        throws RequestArgumentException {
 
-        ParticipantDidTo dto = new ParticipantDidTo();
-        dto.setDid(did);
-        // TODO update to include all verification methods
-        dto.setVerificationMethod(did + "#JWK2020-PossibleLetsEncrypt");
+        if (certificates == null) {
+            return Collections.emptyList();
+        }
 
-        return dto;
+        List<VerificationMethodEntity> verificationMethods = new ArrayList<>();
+        for (var certEntry : certificates.entrySet()) {
+            try {
+                convertPemStringToCertificate(certEntry.getValue());
+            } catch (CertificateException e) {
+                throw new RequestArgumentException("Certificate with ID " + certEntry.getKey() + " is not valid.");
+            }
+
+            if (!certEntry.getKey().matches("^[0-9A-Za-z-]+$")) {
+                throw new RequestArgumentException("Certificate has invalid characters in ID: " + certEntry.getKey());
+            }
+
+            VerificationMethodEntity verificationMethodEntity = new VerificationMethodEntity();
+            verificationMethodEntity.setCertificateId(certEntry.getKey());
+            verificationMethodEntity.setCertificate(certEntry.getValue());
+            verificationMethods.add(verificationMethodEntity);
+        }
+        return verificationMethods;
     }
 
     /**
@@ -262,13 +283,14 @@ public class DidServiceImpl implements DidService {
         for (VerificationMethodEntity vmEntity : participantDidDataEntity.getVerificationMethods()) {
             String certificateUrl = getDidDocumentUri(didWebParticipant).replace("did.json",
                 vmEntity.getCertificateId());
+            String verificationMethodId = didWebParticipant + "#" + vmEntity.getCertificateId();
             didDocument.getVerificationMethod().add(
-                getVerificationMethod(didWebParticipant, vmEntity.getVerificationMethodId(), certificateUrl,
+                getVerificationMethod(didWebParticipant, verificationMethodId, certificateUrl,
                     vmEntity.getCertificate()));
         }
         // add common federation verification method
-        didDocument.getVerificationMethod()
-            .add(getCommonVerificationMethod(didWebParticipant + "#JWK2020-PossibleLetsEncrypt"));
+        String commonVerificationMethodId = didWebParticipant + "#JWK2020-PossibleLetsEncrypt";
+        didDocument.getVerificationMethod().add(getCommonVerificationMethod(commonVerificationMethodId));
 
         return didDocument;
     }

@@ -18,8 +18,6 @@ public class VerificationMethodEntity {
     private Long id;
 
     // TODO make unique
-    private String verificationMethodId;
-
     private String certificateId;
 
     private String certificate;
