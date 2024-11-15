@@ -35,7 +35,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,12 +82,13 @@ class DidServiceTests {
 
     @Test
     void getCommonCertificate() throws Exception {
+
         String commonCert = didService.getCommonCertificate();
         assertNotNull(commonCert);
     }
 
     @Test
-    void getDidDocumentCorrectly() throws Exception {
+    void getParticipantDidDocumentCorrectly() throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -96,7 +98,7 @@ class DidServiceTests {
         ParticipantDidDataEntity participantDidDataEntity = getTestParticipantCertificate();
         when(participantDidDataRepository.findByDid(any())).thenReturn(participantDidDataEntity);
 
-        String actualJsonString = didService.getDidDocument("foo");
+        String actualJsonString = didService.getParticipantDidDocument("foo");
         DidDocument actual = mapper.readValue(actualJsonString, DidDocument.class);
 
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
@@ -104,6 +106,7 @@ class DidServiceTests {
 
     @Test
     void getCommonDidDocument() throws Exception {
+
         String commonDidDocument = didService.getCommonDidDocument();
         assertNotNull(commonDidDocument);
     }
@@ -111,8 +114,7 @@ class DidServiceTests {
     private ParticipantDidDataEntity getTestParticipantCertificate() {
 
         ParticipantDidDataEntity participantDidDataEntity = new ParticipantDidDataEntity();
-        participantDidDataEntity.setDid(
-            "did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3");
+        participantDidDataEntity.setDid("did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3");
         return participantDidDataEntity;
     }
 

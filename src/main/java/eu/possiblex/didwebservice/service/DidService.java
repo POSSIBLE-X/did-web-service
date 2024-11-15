@@ -19,11 +19,20 @@ package eu.possiblex.didwebservice.service;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.exceptions.*;
-
-import java.security.cert.CertificateException;
+import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 
 public interface DidService {
+
+    /**
+     * Returns a specific certificate for a participant.
+     *
+     * @param participantId id of the participant
+     * @param certId id of the certificate
+     * @return the certificate
+     */
+    String getParticipantCertificate(String participantId, String certId) throws ParticipantNotFoundException;
 
     /**
      * Returns a certificate for the federation.
@@ -38,7 +47,8 @@ public interface DidService {
      * @param id id to retrieve the DID document with
      * @return the did document as string
      */
-    DidDocument getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException;
+    DidDocument getParticipantDidDocument(String id)
+        throws ParticipantNotFoundException, DidDocumentGenerationException;
 
     /**
      * Returns the DID document for the MERLOT federation.
@@ -53,6 +63,5 @@ public interface DidService {
      * @param request with information needed for certificate generation
      * @return dto containing the generated did:web and private key
      */
-    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
-        throws RequestArgumentException;
+    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request) throws RequestArgumentException;
 }

@@ -50,9 +50,11 @@ class DidControllerTests {
     @BeforeEach
     public void beforeEach() throws Exception {
 
-        lenient().when(didService.getDidDocument(any())).thenReturn("did document");
-        lenient().when(didService.getDidDocument("unknown-participant")).thenThrow(ParticipantNotFoundException.class);
-        lenient().when(didService.getDidDocument("broken-certificate")).thenThrow(DidDocumentGenerationException.class);
+        lenient().when(didService.getParticipantDidDocument(any())).thenReturn("did document");
+        lenient().when(didService.getParticipantDidDocument("unknown-participant"))
+            .thenThrow(ParticipantNotFoundException.class);
+        lenient().when(didService.getParticipantDidDocument("broken-certificate"))
+            .thenThrow(DidDocumentGenerationException.class);
 
     }
 

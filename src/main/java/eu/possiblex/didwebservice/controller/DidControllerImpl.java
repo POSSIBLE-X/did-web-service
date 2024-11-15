@@ -48,7 +48,7 @@ public class DidControllerImpl implements DidController {
     public DidDocument getDidDocument(@PathVariable(value = "participantId") String participantId) {
 
         try {
-            return didService.getDidDocument(participantId);
+            return didService.getParticipantDidDocument(participantId);
         } catch (ParticipantNotFoundException e1) {
             throw new ResponseStatusException(NOT_FOUND, e1.getMessage());
         } catch (DidDocumentGenerationException e2) {
@@ -66,7 +66,11 @@ public class DidControllerImpl implements DidController {
     public String getCertificate(@PathVariable(value = "participantId") String participantId,
         @PathVariable(value = "certId") String certId) {
 
-        return didService.getCertificate(participantId, certId);
+        try {
+            return didService.getParticipantCertificate(participantId, certId);
+        } catch (ParticipantNotFoundException e) {
+            throw new ResponseStatusException(NOT_FOUND, e.getMessage());
+        }
     }
 
     /**

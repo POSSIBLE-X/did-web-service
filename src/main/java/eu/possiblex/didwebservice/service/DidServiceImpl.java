@@ -95,6 +95,28 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
+     * Get the content of a specific certificate for a participant in PEM format.
+     *
+     * @param participantId id of the participant
+     * @param certId id of the certificate
+     * @return certificate
+     */
+    public String getParticipantCertificate(String participantId, String certId) throws ParticipantNotFoundException {
+
+        String didWeb = getDidWebForParticipant(participantId);
+
+        ParticipantDidDataEntity participantDidDataEntity = participantDidDataRepository.findByDid(didWeb);
+
+        if (participantDidDataEntity == null) {
+            throw new ParticipantNotFoundException("Participant could not be found.");
+        }
+
+        return participantDidDataEntity.getVerificationMethods().stream()
+            .filter(vm -> vm.getCertificateId().equals(certId)).map(VerificationMethodEntity::getCertificate)
+            .findFirst().orElse(null);
+    }
+
+    /**
      * Get the content of the federation-wide common certificate in PEM format.
      *
      * @return common certificate
@@ -114,7 +136,8 @@ public class DidServiceImpl implements DidService {
      * @throws DidDocumentGenerationException failed to build did document from database data
      */
     @Override
-    public DidDocument getDidDocument(String id) throws ParticipantNotFoundException, DidDocumentGenerationException {
+    public DidDocument getParticipantDidDocument(String id)
+        throws ParticipantNotFoundException, DidDocumentGenerationException {
 
         String didWeb = getDidWebForParticipant(id);
 
@@ -282,7 +305,7 @@ public class DidServiceImpl implements DidService {
 
         for (VerificationMethodEntity vmEntity : participantDidDataEntity.getVerificationMethods()) {
             String certificateUrl = getDidDocumentUri(didWebParticipant).replace("did.json",
-                vmEntity.getCertificateId());
+                vmEntity.getCertificateId() + ".ss.pem");
             String verificationMethodId = didWebParticipant + "#" + vmEntity.getCertificateId();
             didDocument.getVerificationMethod().add(
                 getVerificationMethod(didWebParticipant, verificationMethodId, certificateUrl,
