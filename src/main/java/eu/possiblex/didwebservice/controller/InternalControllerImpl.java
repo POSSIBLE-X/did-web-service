@@ -1,6 +1,7 @@
 package eu.possiblex.didwebservice.controller;
 
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.service.DidService;
@@ -17,16 +18,28 @@ public class InternalControllerImpl implements InternalController {
     private final DidService didService;
 
     public InternalControllerImpl(@Autowired DidService didService) {
+
         this.didService = didService;
     }
 
     @Override
     public ParticipantDidTo generateDidWeb(@RequestBody ParticipantDidCreateRequestTo to) {
+
         try {
             return didService.generateParticipantDidWeb(to);
         } catch (RequestArgumentException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Did web generation failed: " + e.getMessage());
         }
 
+    }
+
+    @Override
+    public void removeDidWeb(@RequestBody ParticipantDidRemoveRequestTo to) {
+
+        try {
+            didService.removeParticipantDidWeb(to);
+        } catch (RequestArgumentException e) {
+            throw new ResponseStatusException(BAD_REQUEST, "Did web removal failed: " + e.getMessage());
+        }
     }
 }

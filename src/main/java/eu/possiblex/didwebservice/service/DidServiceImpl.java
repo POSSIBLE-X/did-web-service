@@ -23,9 +23,13 @@ import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.did.PublicJwk;
 import eu.possiblex.didwebservice.models.did.VerificationMethod;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
-import eu.possiblex.didwebservice.models.exceptions.*;
+import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.models.exceptions.PemConversionException;
+import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +37,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -45,7 +52,9 @@ import java.util.*;
 @Slf4j
 public class DidServiceImpl implements DidService {
     private static final String VM_TYPE_ID = "#JWK2020-PossibleLetsEncrypt";
+
     private static final String VM_TYPE = "JsonWebKey2020";
+
     private static final String VM_CONTEXT = "https://w3c-ccg.github.io/lds-jws2020/contexts/v1/";
 
     private final ParticipantDidDataRepository participantDidDataRepository;
@@ -57,15 +66,41 @@ public class DidServiceImpl implements DidService {
     private final String defaultCertPath;
 
     public DidServiceImpl(@Value("${common-cert-path:#{null}}") String defaultCertPath,
-                          @Value("${did-domain}") String didDomain,
-                          @Autowired ObjectMapper objectMapper,
-                          @Autowired ParticipantDidDataRepository participantDidDataRepository
-        ) {
+        @Value("${did-domain}") String didDomain, @Autowired ObjectMapper objectMapper,
+        @Autowired ParticipantDidDataRepository participantDidDataRepository) {
 
         this.defaultCertPath = defaultCertPath;
         this.didDomain = didDomain;
         this.objectMapper = objectMapper;
         this.participantDidDataRepository = participantDidDataRepository;
+    }
+
+    /**
+     * Given the domain part of the did:web, return the resulting URI. See <a
+     * href="https://w3c-ccg.github.io/did-method-web/#read-resolve">did-web specification</a> for reference.
+     *
+     * @param didWeb did:web without prefix and key reference
+     * @return did web URI
+     */
+    private static String getDidDocumentUri(String didWeb) {
+
+        boolean containsSubpath = didWeb.contains(":");
+        StringBuilder didDocumentUriBuilder = new StringBuilder();
+        didDocumentUriBuilder.append(
+            didWeb.replace(":", "/") // Replace ":" with "/" in the method specific identifier to
+                // obtain the fully qualified domain name and optional path.
+                .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
+
+        // Generate an HTTPS URL to the expected location of the DID document by prepending https://.
+        didDocumentUriBuilder.insert(0, "https://");
+        if (!containsSubpath) {
+            // If no path has been specified in the URL, append /.well-known.
+            didDocumentUriBuilder.append("/.well-known");
+        }
+        // Append /did.json to complete the URL.
+        didDocumentUriBuilder.append("/did.json");
+
+        return didDocumentUriBuilder.toString();
     }
 
     /**
@@ -76,6 +111,7 @@ public class DidServiceImpl implements DidService {
      */
     @Override
     public String getCommonCertificate() throws CertificateException {
+
         return getCommonCertificatePemString();
     }
 
@@ -114,6 +150,7 @@ public class DidServiceImpl implements DidService {
      */
     @Override
     public String getCommonDidDocument() throws DidDocumentGenerationException {
+
         try {
             ParticipantDidData federationCert = new ParticipantDidData();
             federationCert.setDid(getCommonDidWeb());
@@ -130,6 +167,7 @@ public class DidServiceImpl implements DidService {
      * @param request with information needed for certificate generation
      * @return dto containing the generated did:web, the verification method and the associated private key
      */
+    @Transactional
     public ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
         throws RequestArgumentException {
 
@@ -143,6 +181,25 @@ public class DidServiceImpl implements DidService {
 
         storeDidDocument(didWeb);
         return createParticipantDidPrivateKeyDto(didWeb);
+    }
+
+    /**
+     * Removes an existing did:web if it exists.
+     *
+     * @param request with information needed for removal
+     * @throws RequestArgumentException did parameter not specified
+     */
+    @Transactional
+    @Override
+    public void removeParticipantDidWeb(ParticipantDidRemoveRequestTo request) throws RequestArgumentException {
+
+        String didWeb = request.getDid();
+
+        if (didWeb == null || didWeb.isBlank()) {
+            throw new RequestArgumentException("Missing or empty did.");
+        }
+
+        deleteDidDocument(didWeb);
     }
 
     /**
@@ -179,8 +236,8 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
-     * Create a new database entry for the given did if it does not already exist.
-     * If it already exists, log it and do nothing.
+     * Create a new database entry for the given did if it does not already exist. If it already exists, log it and do
+     * nothing.
      *
      * @param did did to store in the database
      */
@@ -194,6 +251,15 @@ public class DidServiceImpl implements DidService {
         data.setDid(did);
 
         participantDidDataRepository.save(data);
+    }
+
+    private void deleteDidDocument(String did) {
+
+        if (participantDidDataRepository.findByDid(did) == null) {
+            log.info("Did {} does not exist in the database.", did);
+            return;
+        }
+        participantDidDataRepository.deleteByDid(did);
     }
 
     /**
@@ -233,7 +299,8 @@ public class DidServiceImpl implements DidService {
         didDocument.setVerificationMethod(new ArrayList<>());
 
         // add common federation verification method
-        VerificationMethod commonVerificationMethod = getVerificationMethod(getCommonDidWeb(), getCommonCertificatePemString());
+        VerificationMethod commonVerificationMethod = getVerificationMethod(getCommonDidWeb(),
+            getCommonCertificatePemString());
         commonVerificationMethod.setId(didWebParticipant + VM_TYPE_ID);
         didDocument.getVerificationMethod().add(commonVerificationMethod);
 
@@ -293,34 +360,6 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
-     * Given the domain part of the did:web, return the resulting URI. See <a
-     * href="https://w3c-ccg.github.io/did-method-web/#read-resolve">did-web specification</a> for reference.
-     *
-     * @param didWeb did:web without prefix and key reference
-     * @return did web URI
-     */
-    private static String getDidDocumentUri(String didWeb) {
-
-        boolean containsSubpath = didWeb.contains(":");
-        StringBuilder didDocumentUriBuilder = new StringBuilder();
-        didDocumentUriBuilder.append(
-            didWeb.replace(":", "/") // Replace ":" with "/" in the method specific identifier to
-                // obtain the fully qualified domain name and optional path.
-                .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
-
-        // Generate an HTTPS URL to the expected location of the DID document by prepending https://.
-        didDocumentUriBuilder.insert(0, "https://");
-        if (!containsSubpath) {
-            // If no path has been specified in the URL, append /.well-known.
-            didDocumentUriBuilder.append("/.well-known");
-        }
-        // Append /did.json to complete the URL.
-        didDocumentUriBuilder.append("/did.json");
-
-        return didDocumentUriBuilder.toString();
-    }
-
-    /**
      * Convert a PEM string to a X509 certificate object.
      *
      * @param certs PEM string representation of the certificate
@@ -334,8 +373,7 @@ public class DidServiceImpl implements DidService {
 
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
-        return ((List<X509Certificate>) certFactory.generateCertificates(certStream)).stream()
-            .findFirst().orElse(null);
+        return ((List<X509Certificate>) certFactory.generateCertificates(certStream)).stream().findFirst().orElse(null);
     }
 
     /**
@@ -345,11 +383,12 @@ public class DidServiceImpl implements DidService {
      * @throws CertificateException error during loading of the certificate
      */
     private String getCommonCertificatePemString() throws CertificateException {
-        try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath) ?
-            DidServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
+
+        try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath)
+            ? DidServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
             : new FileInputStream(defaultCertPath)) {
-            return new String(Objects.requireNonNull(certificateStream,
-                "Certificate input stream is null.").readAllBytes(),
+            return new String(
+                Objects.requireNonNull(certificateStream, "Certificate input stream is null.").readAllBytes(),
                 StandardCharsets.UTF_8);
         } catch (IOException | NullPointerException e) {
             throw new CertificateException("Failed to read common certificate. " + e.getMessage());

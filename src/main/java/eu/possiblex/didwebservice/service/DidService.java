@@ -17,8 +17,11 @@
 package eu.possiblex.didwebservice.service;
 
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.exceptions.*;
+import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 
 import java.security.cert.CertificateException;
 
@@ -52,6 +55,12 @@ public interface DidService {
      * @param request with information needed for certificate generation
      * @return dto containing the generated did:web and private key
      */
-    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
-        throws RequestArgumentException;
+    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request) throws RequestArgumentException;
+
+    /**
+     * Removes an existing did:web if it exists.
+     *
+     * @param request with information needed for removal
+     */
+    void removeParticipantDidWeb(ParticipantDidRemoveRequestTo request) throws RequestArgumentException;
 }

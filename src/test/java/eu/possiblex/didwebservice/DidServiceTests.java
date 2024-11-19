@@ -19,11 +19,11 @@ package eu.possiblex.didwebservice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import eu.possiblex.didwebservice.service.DidServiceImpl;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,21 +35,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @EnableConfigurationProperties
@@ -65,6 +55,9 @@ class DidServiceTests {
 
     @Captor
     private ArgumentCaptor<ParticipantDidData> certificateArgumentCaptor;
+
+    @Captor
+    private ArgumentCaptor<String> didStringArgumentCaptor;
 
     @BeforeEach
     public void setUp() {
@@ -91,7 +84,37 @@ class DidServiceTests {
     }
 
     @Test
+    void deleteExistingDidCorrectly() throws Exception {
+
+        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
+        request.setDid("did:web:1234");
+
+        when(participantDidDataRepository.findByDid(any())).thenReturn(new ParticipantDidData());
+
+        didService.removeParticipantDidWeb(request);
+
+        verify(participantDidDataRepository).deleteByDid(didStringArgumentCaptor.capture());
+        String didString = didStringArgumentCaptor.getValue();
+
+        assertTrue(request.getDid().matches(didString));
+    }
+
+    @Test
+    void deleteNonExistingDid() throws Exception {
+
+        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
+        request.setDid("did:web:1234");
+
+        when(participantDidDataRepository.findByDid(any())).thenReturn(null);
+
+        didService.removeParticipantDidWeb(request);
+
+        verify(participantDidDataRepository, never()).deleteByDid(any());
+    }
+
+    @Test
     void getCommonCertificate() throws Exception {
+
         String commonCert = didService.getCommonCertificate();
         assertNotNull(commonCert);
     }
@@ -115,6 +138,7 @@ class DidServiceTests {
 
     @Test
     void getCommonDidDocument() throws Exception {
+
         String commonDidDocument = didService.getCommonDidDocument();
         assertNotNull(commonDidDocument);
     }
@@ -122,8 +146,7 @@ class DidServiceTests {
     private ParticipantDidData getTestParticipantCertificate() {
 
         ParticipantDidData participantDidData = new ParticipantDidData();
-        participantDidData.setDid(
-            "did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3");
+        participantDidData.setDid("did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3");
         return participantDidData;
     }
 
