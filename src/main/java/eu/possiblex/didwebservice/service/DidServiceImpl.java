@@ -25,6 +25,7 @@ import eu.possiblex.didwebservice.models.did.VerificationMethod;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
@@ -181,6 +182,34 @@ public class DidServiceImpl implements DidService {
 
         storeDidDocument(didWeb);
         return createParticipantDidPrivateKeyDto(didWeb);
+    }
+
+    /**
+     * Updates an existing did:web with new content.
+     *
+     * @param request updated information, null for info that should stay the same
+     * @throws RequestArgumentException invalid request
+     */
+    @Override
+    @Transactional
+    public void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request)
+        throws RequestArgumentException, ParticipantNotFoundException {
+
+        String didWeb = request.getDid();
+
+        if (didWeb == null || didWeb.isBlank()) {
+            throw new RequestArgumentException("Missing or empty did.");
+        }
+
+        ParticipantDidData participantDidData = participantDidDataRepository.findByDid(didWeb);
+
+        if (participantDidData == null) {
+            throw new ParticipantNotFoundException("Did does not exist in the database.");
+        }
+
+        if (request.getAliases() != null) {
+            participantDidData.setAliases(request.getAliases());
+        }
     }
 
     /**

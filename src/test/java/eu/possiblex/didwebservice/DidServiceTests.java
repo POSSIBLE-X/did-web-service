@@ -21,9 +21,12 @@ import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
-import eu.possiblex.didwebservice.service.DidServiceImpl;
+import eu.possiblex.didwebservice.service.DidService;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,25 +35,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @EnableConfigurationProperties
+@Transactional
 class DidServiceTests {
     @Value("${did-domain}")
     private String didDomain;
 
     @Autowired
-    private DidServiceImpl didService;
+    private DidService didService;
 
-    @MockBean
+    @SpyBean
     private ParticipantDidDataRepository participantDidDataRepository;
 
     @Captor
@@ -62,7 +66,7 @@ class DidServiceTests {
     @BeforeEach
     public void setUp() {
 
-        ReflectionTestUtils.setField(didService, "participantDidDataRepository", participantDidDataRepository);
+        //ReflectionTestUtils.setField(didService, "participantDidDataRepository", participantDidDataRepository);
     }
 
     @Test
@@ -86,10 +90,10 @@ class DidServiceTests {
     @Test
     void deleteExistingDidCorrectly() throws Exception {
 
-        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
-        request.setDid("did:web:1234");
+        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
 
-        when(participantDidDataRepository.findByDid(any())).thenReturn(new ParticipantDidData());
+        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
+        request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
 
         didService.removeParticipantDidWeb(request);
 
@@ -102,14 +106,41 @@ class DidServiceTests {
     @Test
     void deleteNonExistingDid() throws Exception {
 
+        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
+
         ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
-        request.setDid("did:web:1234");
+        request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
 
         when(participantDidDataRepository.findByDid(any())).thenReturn(null);
 
         didService.removeParticipantDidWeb(request);
 
         verify(participantDidDataRepository, never()).deleteByDid(any());
+    }
+
+    @Test
+    void updateExistingDidCorrectly() throws Exception {
+
+        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
+
+        ParticipantDidUpdateRequestTo request = new ParticipantDidUpdateRequestTo();
+        request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
+        request.setAliases(List.of("alias1", "alias2"));
+
+        didService.updateParticipantDidWeb(request);
+
+        ParticipantDidData data = participantDidDataRepository.findByDid(request.getDid());
+        assertThat(data.getAliases()).containsExactlyInAnyOrder("alias1", "alias2");
+    }
+
+    @Test
+    void updateNonExistingDid() throws Exception {
+
+        ParticipantDidUpdateRequestTo request = new ParticipantDidUpdateRequestTo();
+        request.setDid("did:web:localhost%3A8443:1234");
+        request.setAliases(List.of("alias1", "alias2"));
+
+        assertThrows(ParticipantNotFoundException.class, () -> didService.updateParticipantDidWeb(request));
     }
 
     @Test
@@ -122,15 +153,14 @@ class DidServiceTests {
     @Test
     void getDidDocumentCorrectly() throws Exception {
 
+        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
+
         ObjectMapper mapper = new ObjectMapper();
 
         String expectedJsonString = getTestDidDocumentJsonString();
         DidDocument expected = mapper.readValue(expectedJsonString, DidDocument.class);
 
-        ParticipantDidData participantDidData = getTestParticipantCertificate();
-        when(participantDidDataRepository.findByDid(any())).thenReturn(participantDidData);
-
-        String actualJsonString = didService.getDidDocument("foo");
+        String actualJsonString = didService.getDidDocument("c0334816-5608-387d-b935-7894158d4b1c");
         DidDocument actual = mapper.readValue(actualJsonString, DidDocument.class);
 
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
@@ -158,13 +188,13 @@ class DidServiceTests {
                     "https://www.w3.org/ns/did/v1",
                     "https://w3id.org/security/suites/jws-2020/v1"
                 ],
-                "id": "did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3",
+                "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c",
                 "verificationMethod": [
                     {
                         "@context": [
                             "https://w3c-ccg.github.io/lds-jws2020/contexts/v1/"
                         ],
-                        "id": "did:web:localhost%3A8443:participant:46fa1bd9-3eb6-492f-84a0-5f78a42065b3#JWK2020-PossibleLetsEncrypt",
+                        "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c#JWK2020-PossibleLetsEncrypt",
                         "type": "JsonWebKey2020",
                         "controller": "did:web:localhost%3A8443",
                         "publicKeyJwk": {
