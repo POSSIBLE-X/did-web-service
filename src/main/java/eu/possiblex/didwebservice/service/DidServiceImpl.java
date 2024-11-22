@@ -326,6 +326,7 @@ public class DidServiceImpl implements DidService {
         didDocument.setContext(List.of("https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/jws-2020/v1"));
         didDocument.setId(didWebParticipant);
         didDocument.setVerificationMethod(new ArrayList<>());
+        didDocument.setAlsoKnownAs(participantDidData.getAliases());
 
         // add common federation verification method
         VerificationMethod commonVerificationMethod = getVerificationMethod(getCommonDidWeb(),
