@@ -38,12 +38,12 @@ For a full list of configuration options (including Spring/JPA options) please s
 
 The following endpoints are made available by the DID service:
 
-| Endpoint                   | Description                                                                                                                                                                          |
-|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| /internal/didweb/generate  | internal non-public endpoint that generates a new did-web identity on demand given the subject in the POST request body                                                              |
-| /internal/didweb/update    | internal non-public endpoint that updates an existing did-web identity given the content in the POST request body. Currently this only supports adding/removing aliases for the did. |
-| /internal/didweb/update    | internal non-public endpoint that deletes an existing did-web identity with the id in the content in the POST request body.                                                          |
-| /participant/{id}/did.json | returns the DID document for a given participant id                                                                                                                                  |
-| /.well-known/did.json      | returns a common did document for the dataspace federation identity                                                                                                                  |
-| /.well-known/cert.ss.pem   | returns a common certificate for the dataspace federation identity (currently referenced in all generated did documents)                                                             |
+| Endpoint                       | Description                                                                                                                                                                         |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| POST /internal/didweb/generate | internal non-public endpoint that generates a new did-web identity on demand given the subject in the payload                                                                       |
+| PATCH /internal/didweb/update  | internal non-public endpoint that updates an existing did-web identity given the non-null content in the payload. Currently this only supports adding/removing aliases for the did. |
+| DELETE /internal/didweb/remove | internal non-public endpoint that deletes an existing did-web identity with the id in the content in the payload.                                                                   |
+| /participant/{id}/did.json     | returns the DID document for a given participant id                                                                                                                                 |
+| /.well-known/did.json          | returns a common did document for the dataspace federation identity                                                                                                                 |
+| /.well-known/cert.ss.pem       | returns a common certificate for the dataspace federation identity (currently referenced in all generated did documents)                                                            |
 
