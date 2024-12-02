@@ -23,7 +23,6 @@ import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.did.PublicJwk;
 import eu.possiblex.didwebservice.models.did.VerificationMethod;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
@@ -215,20 +214,18 @@ public class DidServiceImpl implements DidService {
     /**
      * Removes an existing did:web if it exists.
      *
-     * @param request with information needed for removal
+     * @param did did to remove
      * @throws RequestArgumentException did parameter not specified
      */
     @Transactional
     @Override
-    public void removeParticipantDidWeb(ParticipantDidRemoveRequestTo request) throws RequestArgumentException {
+    public void removeParticipantDidWeb(String did) throws RequestArgumentException {
 
-        String didWeb = request.getDid();
-
-        if (didWeb == null || didWeb.isBlank()) {
+        if (did == null || did.isBlank()) {
             throw new RequestArgumentException("Missing or empty did.");
         }
 
-        deleteDidDocument(didWeb);
+        deleteDidDocument(did);
     }
 
     /**

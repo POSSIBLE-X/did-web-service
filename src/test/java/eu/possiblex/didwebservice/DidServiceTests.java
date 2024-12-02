@@ -19,7 +19,6 @@ package eu.possiblex.didwebservice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidData;
@@ -90,17 +89,15 @@ class DidServiceTests {
     @Test
     void deleteExistingDidCorrectly() throws Exception {
 
+        String did = "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c";
         didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
 
-        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
-        request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
-
-        didService.removeParticipantDidWeb(request);
+        didService.removeParticipantDidWeb(did);
 
         verify(participantDidDataRepository).deleteByDid(didStringArgumentCaptor.capture());
         String didString = didStringArgumentCaptor.getValue();
 
-        assertTrue(request.getDid().matches(didString));
+        assertTrue(did.matches(didString));
     }
 
     @Test
@@ -108,12 +105,9 @@ class DidServiceTests {
 
         didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject"));
 
-        ParticipantDidRemoveRequestTo request = new ParticipantDidRemoveRequestTo();
-        request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
-
         when(participantDidDataRepository.findByDid(any())).thenReturn(null);
 
-        didService.removeParticipantDidWeb(request);
+        didService.removeParticipantDidWeb("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
 
         verify(participantDidDataRepository, never()).deleteByDid(any());
     }
@@ -140,7 +134,7 @@ class DidServiceTests {
     }
 
     @Test
-    void updateNonExistingDid() throws Exception {
+    void updateNonExistingDid() {
 
         ParticipantDidUpdateRequestTo request = new ParticipantDidUpdateRequestTo();
         request.setDid("did:web:localhost%3A8443:1234");

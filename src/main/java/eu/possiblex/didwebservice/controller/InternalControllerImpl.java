@@ -1,13 +1,13 @@
 package eu.possiblex.didwebservice.controller;
 
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.service.DidService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -49,10 +49,10 @@ public class InternalControllerImpl implements InternalController {
     }
 
     @Override
-    public void removeDidWeb(@RequestBody ParticipantDidRemoveRequestTo to) {
+    public void removeDidWeb(@PathVariable String did) {
 
         try {
-            didService.removeParticipantDidWeb(to);
+            didService.removeParticipantDidWeb(did);
         } catch (RequestArgumentException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Did web removal failed: " + e.getMessage());
         }

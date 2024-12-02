@@ -17,7 +17,6 @@
 package eu.possiblex.didwebservice.service;
 
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidRemoveRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
@@ -70,7 +69,7 @@ public interface DidService {
     /**
      * Removes an existing did:web if it exists.
      *
-     * @param request with information needed for removal
+     * @param did did to remove
      */
-    void removeParticipantDidWeb(ParticipantDidRemoveRequestTo request) throws RequestArgumentException;
+    void removeParticipantDidWeb(String did) throws RequestArgumentException;
 }
