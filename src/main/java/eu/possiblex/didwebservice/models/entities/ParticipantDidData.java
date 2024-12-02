@@ -16,11 +16,14 @@
 
 package eu.possiblex.didwebservice.models.entities;
 
+import eu.possiblex.didwebservice.repositories.StringListConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -34,4 +37,7 @@ public class ParticipantDidData {
     @Column(unique = true)
     @NotNull
     private String did;
+
+    @Convert(converter = StringListConverter.class)
+    private List<String> aliases;
 }
