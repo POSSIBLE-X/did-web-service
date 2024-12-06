@@ -60,7 +60,7 @@ class InternalControllerTests {
     @Test
     void generateDidOk() throws Exception {
 
-        mvc.perform(MockMvcRequestBuilders.post("/internal/didweb/generate").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(MockMvcRequestBuilders.post("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
                 .content(objectAsJsonString(getValidCreateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
             .andExpect(status().isOk());
     }
@@ -68,7 +68,7 @@ class InternalControllerTests {
     @Test
     void generateDidBadRequest() throws Exception {
 
-        mvc.perform(MockMvcRequestBuilders.post("/internal/didweb/generate").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(MockMvcRequestBuilders.post("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
                 .content(objectAsJsonString(getEmptyCreateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
             .andExpect(status().isBadRequest());
     }
@@ -79,6 +79,7 @@ class InternalControllerTests {
     }
 
     private ParticipantDidCreateRequestTo getValidCreateRequest() {
+
         ParticipantDidCreateRequestTo to = new ParticipantDidCreateRequestTo();
         to.setSubject("valid");
         return to;
