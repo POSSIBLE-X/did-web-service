@@ -104,7 +104,7 @@ public class DidServiceImpl implements DidService {
      * @param certId id of the certificate
      * @return certificate
      */
-    public String getParticipantCertificate(String participantId, String certId) throws ParticipantNotFoundException {
+    public String getParticipantCertificate(String participantId, String certId) {
 
         String didWeb = getDidWebForParticipant(participantId);
 
@@ -135,12 +135,9 @@ public class DidServiceImpl implements DidService {
      *
      * @param id id to retrieve the DID document for
      * @return did document
-     * @throws ParticipantNotFoundException participant with given did did not exist in db
-     * @throws DidDocumentGenerationException failed to build did document from database data
      */
     @Override
-    public DidDocument getParticipantDidDocument(String id)
-        throws ParticipantNotFoundException, DidDocumentGenerationException {
+    public DidDocument getParticipantDidDocument(String id) {
 
         String didWeb = getDidWebForParticipant(id);
 
@@ -161,10 +158,9 @@ public class DidServiceImpl implements DidService {
      * Get the common DID document for the federation.
      *
      * @return federation did document
-     * @throws DidDocumentGenerationException failed to build did document from database data
      */
     @Override
-    public DidDocument getCommonDidDocument() throws DidDocumentGenerationException {
+    public DidDocument getCommonDidDocument() {
 
         try {
             ParticipantDidDataEntity federationCert = new ParticipantDidDataEntity();
@@ -183,8 +179,7 @@ public class DidServiceImpl implements DidService {
      * @return dto containing the generated did:web and the verification methods
      */
     @Transactional
-    public ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request)
-        throws RequestArgumentException {
+    public ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request) {
 
         String certificateSubject = request.getSubject();
 
@@ -207,12 +202,10 @@ public class DidServiceImpl implements DidService {
      * Updates an existing did:web with new content.
      *
      * @param request updated information, null for info that should stay the same
-     * @throws RequestArgumentException invalid request
      */
     @Override
     @Transactional
-    public void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request)
-        throws RequestArgumentException, ParticipantNotFoundException {
+    public void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request) {
 
         String didWeb = request.getDid();
 
@@ -229,17 +222,20 @@ public class DidServiceImpl implements DidService {
         if (request.getAliases() != null) {
             participantDidData.setAliases(request.getAliases());
         }
+
+        if (request.getCertificates() != null) {
+            participantDidData.setVerificationMethods(getVerificationMethodEntities(request.getCertificates()));
+        }
     }
 
     /**
      * Removes an existing did:web if it exists.
      *
      * @param did did to remove
-     * @throws RequestArgumentException did parameter not specified
      */
     @Transactional
     @Override
-    public void removeParticipantDidWeb(String did) throws RequestArgumentException {
+    public void removeParticipantDidWeb(String did) {
 
         if (did == null || did.isBlank()) {
             throw new RequestArgumentException("Missing or empty did.");
@@ -287,8 +283,7 @@ public class DidServiceImpl implements DidService {
      *
      * @param did did to store in the database
      */
-    private ParticipantDidDataEntity storeDidDocument(String did, Map<String, String> certificates)
-        throws RequestArgumentException {
+    private ParticipantDidDataEntity storeDidDocument(String did, Map<String, String> certificates) {
 
         ParticipantDidDataEntity data = participantDidDataRepository.findByDid(did);
         if (data != null) {
@@ -305,8 +300,7 @@ public class DidServiceImpl implements DidService {
         return participantDidDataRepository.save(data);
     }
 
-    private List<VerificationMethodEntity> getVerificationMethodEntities(Map<String, String> certificates)
-        throws RequestArgumentException {
+    private List<VerificationMethodEntity> getVerificationMethodEntities(Map<String, String> certificates) {
 
         if (certificates == null) {
             return Collections.emptyList();
@@ -346,10 +340,8 @@ public class DidServiceImpl implements DidService {
      *
      * @param participantDidDataEntity participant data to build the did document for
      * @return JSON string representation of the did document
-     * @throws PemConversionException failed to convert the certificate to a public key
      */
-    private DidDocument createDidDocument(ParticipantDidDataEntity participantDidDataEntity)
-        throws PemConversionException {
+    private DidDocument createDidDocument(ParticipantDidDataEntity participantDidDataEntity) {
 
         // get did identifier from db data
         String didWebParticipant = participantDidDataEntity.getDid();
@@ -374,7 +366,7 @@ public class DidServiceImpl implements DidService {
         return didDocument;
     }
 
-    private VerificationMethod getCommonVerificationMethod(String verificationMethodId) throws PemConversionException {
+    private VerificationMethod getCommonVerificationMethod(String verificationMethodId) {
 
         String controller = getCommonDidWeb();
         String certificateUrl = getDidDocumentUri(getCommonDidWeb()).replace("did.json", COMMON_CERT_FILENAME);
@@ -389,10 +381,9 @@ public class DidServiceImpl implements DidService {
      * @param certificateUrl url to access the certificate
      * @param certificateString certificate in PEM format
      * @return verification method
-     * @throws PemConversionException failed to convert the certificate to a public key
      */
     private VerificationMethod getVerificationMethod(String controller, String verificationMethodId,
-        String certificateUrl, String certificateString) throws PemConversionException {
+        String certificateUrl, String certificateString) {
 
         // setup verification method
         VerificationMethod vm = new VerificationMethod();
@@ -455,7 +446,7 @@ public class DidServiceImpl implements DidService {
     private String getCommonCertificatePemString(String defaultCertPath) throws CertificateException {
 
         try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath)
-            ? DidServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
+            ? DidServiceImpl.class.getClassLoader().getResourceAsStream(COMMON_CERT_FILENAME)
             : new FileInputStream(defaultCertPath)) {
             return new String(
                 Objects.requireNonNull(certificateStream, "Certificate input stream is null.").readAllBytes(),

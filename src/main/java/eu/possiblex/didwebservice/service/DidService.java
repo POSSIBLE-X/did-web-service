@@ -19,15 +19,7 @@ package eu.possiblex.didwebservice.service;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
-import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
-import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
-import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
-import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
-import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
-
-import java.security.cert.CertificateException;
 
 public interface DidService {
 
@@ -38,7 +30,7 @@ public interface DidService {
      * @param certId id of the certificate
      * @return the certificate
      */
-    String getParticipantCertificate(String participantId, String certId) throws ParticipantNotFoundException;
+    String getParticipantCertificate(String participantId, String certId);
 
     /**
      * Returns a certificate for the federation.
@@ -53,15 +45,14 @@ public interface DidService {
      * @param id id to retrieve the DID document with
      * @return the did document as string
      */
-    DidDocument getParticipantDidDocument(String id)
-        throws ParticipantNotFoundException, DidDocumentGenerationException;
+    DidDocument getParticipantDidDocument(String id);
 
     /**
-     * Returns the DID document for the MERLOT federation.
+     * Returns the DID document for the dataspace federation.
      *
-     * @return the did document as string
+     * @return the did document
      */
-    DidDocument getCommonDidDocument() throws DidDocumentGenerationException;
+    DidDocument getCommonDidDocument();
 
     /**
      * Generates a did:web, a key pair and certificate. Returns the did:web and private key.
@@ -69,21 +60,19 @@ public interface DidService {
      * @param request with information needed for certificate generation
      * @return dto containing the generated did:web and private key
      */
-    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request) throws RequestArgumentException;
+    ParticipantDidTo generateParticipantDidWeb(ParticipantDidCreateRequestTo request);
 
     /**
      * Updates an existing did:web with new content.
      *
      * @param request updated information, null for info that should stay the same
-     * @throws RequestArgumentException invalid request
      */
-    void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request)
-        throws RequestArgumentException, ParticipantNotFoundException;
+    void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request);
 
     /**
      * Removes an existing did:web if it exists.
      *
      * @param did did to remove
      */
-    void removeParticipantDidWeb(String did) throws RequestArgumentException;
+    void removeParticipantDidWeb(String did);
 }

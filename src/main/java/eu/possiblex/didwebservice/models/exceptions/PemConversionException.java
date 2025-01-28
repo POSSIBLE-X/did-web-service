@@ -16,7 +16,7 @@
 
 package eu.possiblex.didwebservice.models.exceptions;
 
-public class PemConversionException extends Exception {
+public class PemConversionException extends RuntimeException {
     public PemConversionException(String message) {
 
         super(message);

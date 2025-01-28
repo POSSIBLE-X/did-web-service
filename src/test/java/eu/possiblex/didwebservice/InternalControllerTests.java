@@ -48,7 +48,7 @@ class InternalControllerTests {
     private MockMvc mvc;
 
     @BeforeEach
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
 
         ParticipantDidTo dto = new ParticipantDidTo();
         ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();

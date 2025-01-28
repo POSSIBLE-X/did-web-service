@@ -69,7 +69,7 @@ class DidServiceTests {
     }
 
     @Test
-    void generateDidAndPrivateKeyCorrectly() throws Exception {
+    void generateDidAndPrivateKeyCorrectly() {
 
         String didRegex = "did:web:" + didDomain.replaceFirst(":", "%3A") + ":participant:[-A-Za-z0-9]*";
 
@@ -87,7 +87,7 @@ class DidServiceTests {
     }
 
     @Test
-    void deleteExistingDidCorrectly() throws Exception {
+    void deleteExistingDidCorrectly() {
 
         String did = "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c";
         didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
@@ -101,7 +101,7 @@ class DidServiceTests {
     }
 
     @Test
-    void deleteNonExistingDid() throws Exception {
+    void deleteNonExistingDid() {
 
         didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
 
@@ -143,7 +143,7 @@ class DidServiceTests {
     }
 
     @Test
-    void getCommonCertificate() throws Exception {
+    void getCommonCertificate() {
 
         String commonCert = didService.getCommonCertificate();
         assertNotNull(commonCert);
@@ -168,7 +168,7 @@ class DidServiceTests {
     }
 
     @Test
-    void getCommonDidDocument() throws Exception {
+    void getCommonDidDocument() {
 
         DidDocument commonDidDocument = didService.getCommonDidDocument();
         assertNotNull(commonDidDocument);

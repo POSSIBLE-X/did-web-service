@@ -48,7 +48,7 @@ class DidControllerTests {
     private MockMvc mvc;
 
     @BeforeEach
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
 
         lenient().when(didService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
         lenient().when(didService.getParticipantCertificate(any(), any())).thenReturn("certificate");

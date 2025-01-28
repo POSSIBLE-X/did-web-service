@@ -16,7 +16,7 @@
 
 package eu.possiblex.didwebservice.models.exceptions;
 
-public class DidDocumentGenerationException extends Exception {
+public class DidDocumentGenerationException extends RuntimeException {
     public DidDocumentGenerationException(String message) {
 
         super(message);
