@@ -18,6 +18,7 @@ package eu.possiblex.didwebservice.models.did;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +27,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@EqualsAndHashCode
 @JsonPropertyOrder({ "@context", "id", "verificationMethod" })
 public class DidDocument {
     @JsonProperty("@context")
@@ -35,4 +37,6 @@ public class DidDocument {
     private String id;
 
     private List<VerificationMethod> verificationMethod = new ArrayList<>();
+
+    private List<String> alsoKnownAs;
 }

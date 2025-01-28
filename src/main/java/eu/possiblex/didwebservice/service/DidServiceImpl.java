@@ -23,6 +23,7 @@ import eu.possiblex.didwebservice.models.did.PublicJwk;
 import eu.possiblex.didwebservice.models.did.VerificationMethod;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
@@ -51,6 +52,8 @@ import java.util.*;
 @Slf4j
 public class DidServiceImpl implements DidService {
 
+    private static final String COMMON_CERT_FILENAME = "cert.ss.pem";
+
     private final ParticipantDidDataRepository participantDidDataRepository;
 
     private final String serviceDomain;
@@ -62,8 +65,8 @@ public class DidServiceImpl implements DidService {
         @Autowired ParticipantDidDataRepository participantDidDataRepository) throws CertificateException {
 
         this.serviceDomain = serviceDomain;
-        this.participantDidDataRepository = participantDidDataRepository;
         this.commonCertificateString = getCommonCertificatePemString(defaultCertPath);
+        this.participantDidDataRepository = participantDidDataRepository;
     }
 
     /**
@@ -75,12 +78,13 @@ public class DidServiceImpl implements DidService {
      */
     private static String getDidDocumentUri(String didWeb) {
 
-        boolean containsSubpath = didWeb.contains(":");
+        String didWebWithoutPrefix = didWeb.replace("did:web:", "");
+        boolean containsSubpath = didWebWithoutPrefix.contains(":");
         StringBuilder didDocumentUriBuilder = new StringBuilder();
-        didDocumentUriBuilder.append(didWeb.replace("did:web:", "") // remove prefix
-            .replace(":", "/") // Replace ":" with "/" in the method specific identifier to
-            // obtain the fully qualified domain name and optional path.
-            .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
+        didDocumentUriBuilder.append(
+            didWebWithoutPrefix.replace(":", "/") // Replace ":" with "/" in the method specific identifier to
+                // obtain the fully qualified domain name and optional path.
+                .replace("%3A", ":")); // If the domain contains a port percent decode the colon.
 
         // Generate an HTTPS URL to the expected location of the DID document by prepending https://.
         didDocumentUriBuilder.insert(0, "https://");
@@ -201,6 +205,51 @@ public class DidServiceImpl implements DidService {
     }
 
     /**
+     * Updates an existing did:web with new content.
+     *
+     * @param request updated information, null for info that should stay the same
+     * @throws RequestArgumentException invalid request
+     */
+    @Override
+    @Transactional
+    public void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request)
+        throws RequestArgumentException, ParticipantNotFoundException {
+
+        String didWeb = request.getDid();
+
+        if (didWeb == null || didWeb.isBlank()) {
+            throw new RequestArgumentException("Missing or empty did.");
+        }
+
+        ParticipantDidDataEntity participantDidData = participantDidDataRepository.findByDid(didWeb);
+
+        if (participantDidData == null) {
+            throw new ParticipantNotFoundException("Did does not exist in the database.");
+        }
+
+        if (request.getAliases() != null) {
+            participantDidData.setAliases(request.getAliases());
+        }
+    }
+
+    /**
+     * Removes an existing did:web if it exists.
+     *
+     * @param did did to remove
+     * @throws RequestArgumentException did parameter not specified
+     */
+    @Transactional
+    @Override
+    public void removeParticipantDidWeb(String did) throws RequestArgumentException {
+
+        if (did == null || did.isBlank()) {
+            throw new RequestArgumentException("Missing or empty did.");
+        }
+
+        deleteDidDocument(did);
+    }
+
+    /**
      * generate a did-web identifier based on the given seed.
      *
      * @param seed seed to generate the did-web from
@@ -284,6 +333,15 @@ public class DidServiceImpl implements DidService {
         return verificationMethods;
     }
 
+    private void deleteDidDocument(String did) {
+
+        if (participantDidDataRepository.findByDid(did) == null) {
+            log.info("Did {} does not exist in the database.", did);
+            return;
+        }
+        participantDidDataRepository.deleteByDid(did);
+    }
+
     /**
      * Given a database entry for a participant, build the corresponding did document.
      *
@@ -302,6 +360,7 @@ public class DidServiceImpl implements DidService {
         // build did document
         DidDocument didDocument = new DidDocument();
         didDocument.setId(didWebParticipant);
+        didDocument.setAlsoKnownAs(participantDidDataEntity.getAliases());
 
         for (VerificationMethodEntity vmEntity : participantDidDataEntity.getVerificationMethods()) {
             String certificateUrl = getDidDocumentUri(didWebParticipant).replace("did.json",
@@ -321,7 +380,7 @@ public class DidServiceImpl implements DidService {
     private VerificationMethod getCommonVerificationMethod(String verificationMethodId) throws PemConversionException {
 
         String controller = getCommonDidWeb();
-        String certificateUrl = getDidDocumentUri(getCommonDidWeb()).replace("did.json", "cert.ss.pem");
+        String certificateUrl = getDidDocumentUri(getCommonDidWeb()).replace("did.json", COMMON_CERT_FILENAME);
         return getVerificationMethod(controller, verificationMethodId, certificateUrl, commonCertificateString);
     }
 

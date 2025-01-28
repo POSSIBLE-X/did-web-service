@@ -21,4 +21,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParticipantDidDataRepository extends JpaRepository<ParticipantDidDataEntity, String> {
     ParticipantDidDataEntity findByDid(String did);
+
+    void deleteByDid(String did);
 }

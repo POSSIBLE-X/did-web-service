@@ -17,6 +17,7 @@
 package eu.possiblex.didwebservice;
 
 import eu.possiblex.didwebservice.controller.DidControllerImpl;
+import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.service.DidService;
@@ -29,8 +30,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import java.security.cert.CertificateException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -50,7 +49,7 @@ class DidControllerTests {
     @BeforeEach
     public void beforeEach() throws Exception {
 
-        lenient().when(didService.getParticipantDidDocument(any())).thenReturn("did document");
+        lenient().when(didService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
         lenient().when(didService.getParticipantDidDocument("unknown-participant"))
             .thenThrow(ParticipantNotFoundException.class);
         lenient().when(didService.getParticipantDidDocument("broken-certificate"))
@@ -102,15 +101,6 @@ class DidControllerTests {
 
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
             .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print()).andExpect(status().isOk());
-    }
-
-    @Test
-    void getCommonCertificateReadFail() throws Exception {
-
-        when(didService.getCommonCertificate()).thenThrow(new CertificateException("failed to read cert"));
-        mvc.perform(MockMvcRequestBuilders.get("/.well-known/cert.ss.pem")
-                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"))).andDo(print())
-            .andExpect(status().isInternalServerError());
     }
 
     @Test

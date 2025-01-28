@@ -16,12 +16,14 @@
 
 package eu.possiblex.didwebservice.models.entities;
 
+import eu.possiblex.didwebservice.repositories.StringListConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -39,6 +41,9 @@ public class ParticipantDidDataEntity {
     private String did;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<VerificationMethodEntity> verificationMethods;
+    private List<VerificationMethodEntity> verificationMethods = new ArrayList<>();
+
+    @Convert(converter = StringListConverter.class)
+    private List<String> aliases = new ArrayList<>();
 
 }
