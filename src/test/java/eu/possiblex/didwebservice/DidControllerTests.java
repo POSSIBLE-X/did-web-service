@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -50,7 +51,10 @@ class DidControllerTests {
     public void beforeEach() throws Exception {
 
         lenient().when(didService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
+        lenient().when(didService.getParticipantCertificate(any(), any())).thenReturn("certificate");
         lenient().when(didService.getParticipantDidDocument("unknown-participant"))
+            .thenThrow(ParticipantNotFoundException.class);
+        lenient().when(didService.getParticipantCertificate(eq("unknown-participant"), any()))
             .thenThrow(ParticipantNotFoundException.class);
         lenient().when(didService.getParticipantDidDocument("broken-certificate"))
             .thenThrow(DidDocumentGenerationException.class);
