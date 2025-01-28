@@ -17,7 +17,6 @@
 package eu.possiblex.didwebservice.service;
 
 import ch.qos.logback.core.util.StringUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.did.PublicJwk;
 import eu.possiblex.didwebservice.models.did.VerificationMethod;
@@ -171,7 +170,7 @@ public class DidServiceImpl implements DidService {
             ParticipantDidDataEntity federationCert = new ParticipantDidDataEntity();
             federationCert.setDid(getCommonDidWeb());
             return createDidDocument(federationCert);
-        } catch (CertificateException | JsonProcessingException | PemConversionException e) {
+        } catch (PemConversionException e) {
             throw new DidDocumentGenerationException("Failed to build did.json for Federation: " + e.getMessage());
         }
 
@@ -347,12 +346,10 @@ public class DidServiceImpl implements DidService {
      *
      * @param participantDidDataEntity participant data to build the did document for
      * @return JSON string representation of the did document
-     * @throws JsonProcessingException failed to convert the did document to JSON
      * @throws PemConversionException failed to convert the certificate to a public key
-     * @throws CertificateException failed to load the common certificate
      */
     private DidDocument createDidDocument(ParticipantDidDataEntity participantDidDataEntity)
-        throws JsonProcessingException, PemConversionException, CertificateException {
+        throws PemConversionException {
 
         // get did identifier from db data
         String didWebParticipant = participantDidDataEntity.getDid();
