@@ -62,6 +62,9 @@ management:
     health:
       enabled: true
 
-did-domain: "localhost:4443"
 
-common-cert-path: ""
+did-web-domain: "localhost:4443"
+common-verification-method:
+  enabled: true
+  cert-path: ""
+  id: "JWK2020-PossibleLetsEncrypt"

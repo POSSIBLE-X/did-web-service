@@ -24,9 +24,10 @@ import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
-import eu.possiblex.didwebservice.service.DidService;
+import eu.possiblex.didwebservice.service.CertificateService;
+import eu.possiblex.didwebservice.service.DidDocumentService;
+import eu.possiblex.didwebservice.service.DidManagementService;
 import jakarta.transaction.Transactional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -48,11 +49,17 @@ import static org.mockito.Mockito.*;
 @EnableConfigurationProperties
 @Transactional
 class DidServiceTests {
-    @Value("${did-domain}")
+    @Value("${did-web-domain}")
     private String didDomain;
 
     @Autowired
-    private DidService didService;
+    private DidDocumentService didDocumentService;
+
+    @Autowired
+    private DidManagementService didManagementService;
+
+    @Autowired
+    private CertificateService certificateService;
 
     @SpyBean
     private ParticipantDidDataRepository participantDidDataRepository;
@@ -63,11 +70,6 @@ class DidServiceTests {
     @Captor
     private ArgumentCaptor<String> didStringArgumentCaptor;
 
-    @BeforeEach
-    public void setUp() {
-
-    }
-
     @Test
     void generateDidAndPrivateKeyCorrectly() {
 
@@ -76,7 +78,7 @@ class DidServiceTests {
         ParticipantDidCreateRequestTo request = new ParticipantDidCreateRequestTo();
         request.setSubject("ABC Company");
 
-        ParticipantDidTo dto = didService.generateParticipantDidWeb(request);
+        ParticipantDidTo dto = didManagementService.generateParticipantDidWeb(request);
 
         assertTrue(dto.getDid().matches(didRegex));
 
@@ -90,9 +92,10 @@ class DidServiceTests {
     void deleteExistingDidCorrectly() {
 
         String did = "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c";
-        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
+        didManagementService.generateParticipantDidWeb(
+            new ParticipantDidCreateRequestTo("some subject", Collections.emptyList(), Collections.emptyMap()));
 
-        didService.removeParticipantDidWeb(did);
+        didManagementService.removeParticipantDidWeb(did);
 
         verify(participantDidDataRepository).deleteByDid(didStringArgumentCaptor.capture());
         String didString = didStringArgumentCaptor.getValue();
@@ -103,11 +106,13 @@ class DidServiceTests {
     @Test
     void deleteNonExistingDid() {
 
-        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
+        didManagementService.generateParticipantDidWeb(
+            new ParticipantDidCreateRequestTo("some subject", Collections.emptyList(), Collections.emptyMap()));
 
         when(participantDidDataRepository.findByDid(any())).thenReturn(null);
 
-        didService.removeParticipantDidWeb("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
+        didManagementService.removeParticipantDidWeb(
+            "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
 
         verify(participantDidDataRepository, never()).deleteByDid(any());
     }
@@ -115,19 +120,20 @@ class DidServiceTests {
     @Test
     void updateExistingDidCorrectly() throws Exception {
 
-        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
+        didManagementService.generateParticipantDidWeb(
+            new ParticipantDidCreateRequestTo("some subject", Collections.emptyList(), Collections.emptyMap()));
 
         ParticipantDidUpdateRequestTo request = new ParticipantDidUpdateRequestTo();
         request.setDid("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
         request.setAliases(List.of("alias1", "alias2"));
 
-        didService.updateParticipantDidWeb(request);
+        didManagementService.updateParticipantDidWeb(request);
 
         ObjectMapper mapper = new ObjectMapper();
         String expectedJsonString = getTestDidDocumentJsonStringWithAliases();
         DidDocument expected = mapper.readValue(expectedJsonString, DidDocument.class);
 
-        DidDocument actual = didService.getParticipantDidDocument("c0334816-5608-387d-b935-7894158d4b1c");
+        DidDocument actual = didDocumentService.getParticipantDidDocument("c0334816-5608-387d-b935-7894158d4b1c");
 
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
     }
@@ -139,20 +145,21 @@ class DidServiceTests {
         request.setDid("did:web:localhost%3A8443:1234");
         request.setAliases(List.of("alias1", "alias2"));
 
-        assertThrows(ParticipantNotFoundException.class, () -> didService.updateParticipantDidWeb(request));
+        assertThrows(ParticipantNotFoundException.class, () -> didManagementService.updateParticipantDidWeb(request));
     }
 
     @Test
     void getCommonCertificate() {
 
-        String commonCert = didService.getCommonCertificate();
+        String commonCert = certificateService.getCommonCertificate();
         assertNotNull(commonCert);
     }
 
     @Test
     void getParticipantDidDocumentCorrectly() throws Exception {
 
-        didService.generateParticipantDidWeb(new ParticipantDidCreateRequestTo("some subject", Collections.emptyMap()));
+        didManagementService.generateParticipantDidWeb(
+            new ParticipantDidCreateRequestTo("some subject", Collections.emptyList(), Collections.emptyMap()));
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -162,7 +169,7 @@ class DidServiceTests {
         ParticipantDidDataEntity participantDidDataEntity = getTestParticipantCertificate();
         when(participantDidDataRepository.findByDid(any())).thenReturn(participantDidDataEntity);
 
-        DidDocument actual = didService.getParticipantDidDocument("c0334816-5608-387d-b935-7894158d4b1c");
+        DidDocument actual = didDocumentService.getParticipantDidDocument("c0334816-5608-387d-b935-7894158d4b1c");
 
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
     }
@@ -170,7 +177,7 @@ class DidServiceTests {
     @Test
     void getCommonDidDocument() {
 
-        DidDocument commonDidDocument = didService.getCommonDidDocument();
+        DidDocument commonDidDocument = didDocumentService.getCommonDidDocument();
         assertNotNull(commonDidDocument);
     }
 
@@ -198,7 +205,7 @@ class DidServiceTests {
                         "@context": [
                             "https://w3c-ccg.github.io/lds-jws2020/contexts/v1/"
                         ],
-                        "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c#JWK2020-PossibleLetsEncrypt",
+                        "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c#some-id",
                         "type": "JsonWebKey2020",
                         "controller": "did:web:localhost%3A8443",
                         "publicKeyJwk": {
@@ -206,7 +213,7 @@ class DidServiceTests {
                             "n": "ANJ2GVOhLrsxygQs5HAWarDJFWV54GDu1bo3y1P-MrO6JxeB8UyTz9zhihI242zIJqWu7ymlkaJrf11043pgN693-bfG49CKKhX720yKuuRlCCIeMtplW6JnXEC0StgLn-_bw4qojjZJ00rLaD4wIgoOres_yq7hhWWwzoWJGcKq4xp5gfy3xUpaXi8JEEPuXVS4YV5CJploZwAqAKPBAp8tuAKe8C2zfYvaNXzUs9rrMwAo9M8RYZdzRrpxxVJt2JBndFEb6E6F6SvWuM34oUlMR43k9P-2vablReBN8NQAI0oeJ1d6SxNHCcgyE1W9jOHd5vbY48_918I2IgACdTClQUigzNu6XsURQiY_w72_na_gCJoagYTwx5_4I3WkWSFaAAwuM8AVC5Kb1GlCCpjRcmDow2Flkwc03-BrPUC-WnZVX1citeDGTwTsqvnKiCMpoKegOf0d4SpwggT_Av0tPlQ4nYSOj6-VST8fQ8nSNHgdg4jsjmb234O7ClZCVxVBCUYgUzIbo8o2Knk7Qh4whR3LWVUPIVNu_XspO5qZqQ65LXwhSRYvtNGc0Fk4LcwaBoZHuYY9IY7RtZ-IzegX8qXU-aAfg3l5dj9Yaf4TQvSOYL3llGBwKjeFSr3v-dgN7m_LwZSEkIRFHmaBVLXq04gwNzciu8LI_1e_ijOl",
                             "e": "AQAB",
                             "alg": "PS256",
-                            "x5u": "https://localhost:8443/.well-known/cert.ss.pem"
+                            "x5u": "https://localhost:8443/.well-known/some-id.pem"
                         }
                     }
                 ]
@@ -231,7 +238,7 @@ class DidServiceTests {
                         "@context": [
                             "https://w3c-ccg.github.io/lds-jws2020/contexts/v1/"
                         ],
-                        "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c#JWK2020-PossibleLetsEncrypt",
+                        "id": "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c#some-id",
                         "type": "JsonWebKey2020",
                         "controller": "did:web:localhost%3A8443",
                         "publicKeyJwk": {
@@ -239,7 +246,7 @@ class DidServiceTests {
                             "n": "ANJ2GVOhLrsxygQs5HAWarDJFWV54GDu1bo3y1P-MrO6JxeB8UyTz9zhihI242zIJqWu7ymlkaJrf11043pgN693-bfG49CKKhX720yKuuRlCCIeMtplW6JnXEC0StgLn-_bw4qojjZJ00rLaD4wIgoOres_yq7hhWWwzoWJGcKq4xp5gfy3xUpaXi8JEEPuXVS4YV5CJploZwAqAKPBAp8tuAKe8C2zfYvaNXzUs9rrMwAo9M8RYZdzRrpxxVJt2JBndFEb6E6F6SvWuM34oUlMR43k9P-2vablReBN8NQAI0oeJ1d6SxNHCcgyE1W9jOHd5vbY48_918I2IgACdTClQUigzNu6XsURQiY_w72_na_gCJoagYTwx5_4I3WkWSFaAAwuM8AVC5Kb1GlCCpjRcmDow2Flkwc03-BrPUC-WnZVX1citeDGTwTsqvnKiCMpoKegOf0d4SpwggT_Av0tPlQ4nYSOj6-VST8fQ8nSNHgdg4jsjmb234O7ClZCVxVBCUYgUzIbo8o2Knk7Qh4whR3LWVUPIVNu_XspO5qZqQ65LXwhSRYvtNGc0Fk4LcwaBoZHuYY9IY7RtZ-IzegX8qXU-aAfg3l5dj9Yaf4TQvSOYL3llGBwKjeFSr3v-dgN7m_LwZSEkIRFHmaBVLXq04gwNzciu8LI_1e_ijOl",
                             "e": "AQAB",
                             "alg": "PS256",
-                            "x5u": "https://localhost:8443/.well-known/cert.ss.pem"
+                            "x5u": "https://localhost:8443/.well-known/some-id.pem"
                         }
                     }
                 ]

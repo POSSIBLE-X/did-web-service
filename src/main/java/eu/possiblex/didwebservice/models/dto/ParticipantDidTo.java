@@ -13,4 +13,6 @@ public class ParticipantDidTo {
     private String did;
 
     private List<String> verificationMethodIds;
+
+    private List<String> aliases;
 }

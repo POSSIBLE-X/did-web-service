@@ -19,7 +19,8 @@ package eu.possiblex.didwebservice.controller;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
-import eu.possiblex.didwebservice.service.DidService;
+import eu.possiblex.didwebservice.service.CertificateService;
+import eu.possiblex.didwebservice.service.DidDocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,11 +32,15 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RestController
 
 public class DidControllerImpl implements DidController {
-    private final DidService didService;
+    private final DidDocumentService didDocumentService;
 
-    public DidControllerImpl(@Autowired DidService didService) {
+    private final CertificateService certificateService;
 
-        this.didService = didService;
+    public DidControllerImpl(@Autowired DidDocumentService didDocumentService,
+        @Autowired CertificateService certificateService) {
+
+        this.didDocumentService = didDocumentService;
+        this.certificateService = certificateService;
     }
 
     /**
@@ -48,7 +53,7 @@ public class DidControllerImpl implements DidController {
     public DidDocument getDidDocument(@PathVariable(value = "participantId") String participantId) {
 
         try {
-            return didService.getParticipantDidDocument(participantId);
+            return didDocumentService.getParticipantDidDocument(participantId);
         } catch (ParticipantNotFoundException e1) {
             throw new ResponseStatusException(NOT_FOUND, e1.getMessage());
         } catch (DidDocumentGenerationException e2) {
@@ -67,7 +72,7 @@ public class DidControllerImpl implements DidController {
         @PathVariable(value = "certId") String certId) {
 
         try {
-            return didService.getParticipantCertificate(participantId, certId);
+            return certificateService.getParticipantCertificate(participantId, certId);
         } catch (ParticipantNotFoundException e) {
             throw new ResponseStatusException(NOT_FOUND, e.getMessage());
         }
@@ -82,7 +87,7 @@ public class DidControllerImpl implements DidController {
     public DidDocument getCommonDidDocument() {
 
         try {
-            return didService.getCommonDidDocument();
+            return didDocumentService.getCommonDidDocument();
         } catch (DidDocumentGenerationException e) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR,
                 "Did document provision failed: " + e.getMessage());
@@ -97,6 +102,6 @@ public class DidControllerImpl implements DidController {
     @Override
     public String getCommonCertificate() {
 
-        return didService.getCommonCertificate();
+        return certificateService.getCommonCertificate();
     }
 }

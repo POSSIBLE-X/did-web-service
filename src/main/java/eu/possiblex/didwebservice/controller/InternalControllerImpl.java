@@ -5,7 +5,7 @@ import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
-import eu.possiblex.didwebservice.service.DidService;
+import eu.possiblex.didwebservice.service.DidManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,18 +18,18 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RestController
 public class InternalControllerImpl implements InternalController {
 
-    private final DidService didService;
+    private final DidManagementService didManagementService;
 
-    public InternalControllerImpl(@Autowired DidService didService) {
+    public InternalControllerImpl(@Autowired DidManagementService didManagementService) {
 
-        this.didService = didService;
+        this.didManagementService = didManagementService;
     }
 
     @Override
     public ParticipantDidTo generateDidWeb(@RequestBody ParticipantDidCreateRequestTo to) {
 
         try {
-            return didService.generateParticipantDidWeb(to);
+            return didManagementService.generateParticipantDidWeb(to);
         } catch (RequestArgumentException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Did web generation failed: " + e.getMessage());
         }
@@ -40,7 +40,7 @@ public class InternalControllerImpl implements InternalController {
     public void updateDidWeb(ParticipantDidUpdateRequestTo to) {
 
         try {
-            didService.updateParticipantDidWeb(to);
+            didManagementService.updateParticipantDidWeb(to);
         } catch (RequestArgumentException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Did document update failed: " + e.getMessage());
         } catch (ParticipantNotFoundException e) {
@@ -52,7 +52,7 @@ public class InternalControllerImpl implements InternalController {
     public void removeDidWeb(@PathVariable String did) {
 
         try {
-            didService.removeParticipantDidWeb(did);
+            didManagementService.removeParticipantDidWeb(did);
         } catch (RequestArgumentException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Did web removal failed: " + e.getMessage());
         }

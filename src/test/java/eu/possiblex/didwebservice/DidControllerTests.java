@@ -20,7 +20,8 @@ import eu.possiblex.didwebservice.controller.DidControllerImpl;
 import eu.possiblex.didwebservice.models.did.DidDocument;
 import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
-import eu.possiblex.didwebservice.service.DidService;
+import eu.possiblex.didwebservice.service.CertificateService;
+import eu.possiblex.didwebservice.service.DidDocumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class DidControllerTests {
     @MockBean
-    private DidService didService;
+    private DidDocumentService didDocumentService;
+
+    @MockBean
+    private CertificateService certificateService;
 
     @Autowired
     private MockMvc mvc;
@@ -50,13 +54,13 @@ class DidControllerTests {
     @BeforeEach
     public void beforeEach() {
 
-        lenient().when(didService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
-        lenient().when(didService.getParticipantCertificate(any(), any())).thenReturn("certificate");
-        lenient().when(didService.getParticipantDidDocument("unknown-participant"))
+        lenient().when(didDocumentService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
+        lenient().when(certificateService.getParticipantCertificate(any(), any())).thenReturn("certificate");
+        lenient().when(didDocumentService.getParticipantDidDocument("unknown-participant"))
             .thenThrow(ParticipantNotFoundException.class);
-        lenient().when(didService.getParticipantCertificate(eq("unknown-participant"), any()))
+        lenient().when(certificateService.getParticipantCertificate(eq("unknown-participant"), any()))
             .thenThrow(ParticipantNotFoundException.class);
-        lenient().when(didService.getParticipantDidDocument("broken-certificate"))
+        lenient().when(didDocumentService.getParticipantDidDocument("broken-certificate"))
             .thenThrow(DidDocumentGenerationException.class);
 
     }
@@ -78,7 +82,7 @@ class DidControllerTests {
     @Test
     void getCommonDidDocumentFailed() throws Exception {
 
-        when(didService.getCommonDidDocument()).thenThrow(
+        when(didDocumentService.getCommonDidDocument()).thenThrow(
             new DidDocumentGenerationException("Failed to generate did document"));
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/did.json").accept(MediaType.APPLICATION_JSON))
             .andDo(print()).andExpect(status().isInternalServerError());
