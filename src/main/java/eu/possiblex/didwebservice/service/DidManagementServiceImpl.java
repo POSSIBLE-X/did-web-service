@@ -151,6 +151,11 @@ public class DidManagementServiceImpl implements DidManagementService {
                 throw new RequestArgumentException("Certificate has invalid characters in ID: " + certEntry.getKey());
             }
 
+            if (commonVmEnabled && certEntry.getKey().equals(commonVmId)) {
+                throw new RequestArgumentException(
+                    "Certificate ID " + certEntry.getKey() + " is reserved for common verification method.");
+            }
+
             VerificationMethodEntity verificationMethodEntity = new VerificationMethodEntity();
             verificationMethodEntity.setCertificateId(certEntry.getKey());
             verificationMethodEntity.setCertificate(certEntry.getValue());
