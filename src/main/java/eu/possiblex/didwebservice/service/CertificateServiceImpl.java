@@ -5,6 +5,7 @@ import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
+import eu.possiblex.didwebservice.utils.DidUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,7 +103,7 @@ public class CertificateServiceImpl implements CertificateService {
     private String getCommonCertificatePemString(String defaultCertPath) throws CertificateException {
 
         try (InputStream certificateStream = StringUtil.isNullOrEmpty(defaultCertPath)
-            ? CertificateServiceImpl.class.getClassLoader().getResourceAsStream("cert.ss.pem")
+            ? CertificateServiceImpl.class.getClassLoader().getResourceAsStream(DidUtils.COMMON_CERTIFICATE_FILE)
             : new FileInputStream(defaultCertPath)) {
             return new String(
                 Objects.requireNonNull(certificateStream, "Certificate input stream is null.").readAllBytes(),

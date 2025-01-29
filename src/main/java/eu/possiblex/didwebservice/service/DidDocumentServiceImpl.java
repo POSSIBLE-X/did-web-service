@@ -106,7 +106,7 @@ public class DidDocumentServiceImpl implements DidDocumentService {
 
         for (VerificationMethodEntity vmEntity : participantDidDataEntity.getVerificationMethods()) {
             String certificateUrl = DidUtils.getDidDocumentUri(didWebParticipant)
-                .replace("did.json", vmEntity.getCertificateId() + ".pem");
+                .replace(DidUtils.DID_DOCUMENT_FILE, vmEntity.getCertificateId() + ".pem");
             String verificationMethodId = didWebParticipant + "#" + vmEntity.getCertificateId();
             didDocument.getVerificationMethod().add(
                 getVerificationMethod(didWebParticipant, verificationMethodId, certificateUrl,
@@ -125,7 +125,7 @@ public class DidDocumentServiceImpl implements DidDocumentService {
 
         String controller = didWebUrlService.getCommonDidWeb();
         String certificateUrl = DidUtils.getDidDocumentUri(didWebUrlService.getCommonDidWeb())
-            .replace("did.json", commonVmId + ".pem");
+            .replace(DidUtils.DID_DOCUMENT_FILE, DidUtils.COMMON_CERTIFICATE_FILE);
         return getVerificationMethod(controller, verificationMethodId, certificateUrl,
             certificateService.getCommonCertificate());
     }

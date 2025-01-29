@@ -2,6 +2,12 @@ package eu.possiblex.didwebservice.utils;
 
 public class DidUtils {
 
+    public static final String DID_WEB_PREFIX = "did:web:";
+
+    public static final String DID_DOCUMENT_FILE = "did.json";
+
+    public static final String COMMON_CERTIFICATE_FILE = "cert.ss.pem";
+
     private DidUtils() {
 
     }
@@ -15,7 +21,7 @@ public class DidUtils {
      */
     public static String getDidDocumentUri(String didWeb) {
 
-        String didWebWithoutPrefix = didWeb.replace("did:web:", "");
+        String didWebWithoutPrefix = didWeb.replace(DID_WEB_PREFIX, "");
         boolean containsSubpath = didWebWithoutPrefix.contains(":");
         StringBuilder didDocumentUriBuilder = new StringBuilder();
         didDocumentUriBuilder.append(
@@ -30,7 +36,7 @@ public class DidUtils {
             didDocumentUriBuilder.append("/.well-known");
         }
         // Append /did.json to complete the URL.
-        didDocumentUriBuilder.append("/did.json");
+        didDocumentUriBuilder.append("/" + DID_DOCUMENT_FILE);
 
         return didDocumentUriBuilder.toString();
     }
