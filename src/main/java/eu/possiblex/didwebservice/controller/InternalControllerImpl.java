@@ -26,9 +26,9 @@ public class InternalControllerImpl implements InternalController {
     }
 
     @Override
-    public void updateDidWeb(ParticipantDidUpdateRequestTo to) {
+    public ParticipantDidTo updateDidWeb(ParticipantDidUpdateRequestTo to) {
 
-        didManagementService.updateParticipantDidWeb(to);
+        return didManagementService.updateParticipantDidWeb(to);
     }
 
     @Override

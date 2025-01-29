@@ -62,13 +62,8 @@ public class DidManagementServiceImpl implements DidManagementService {
         String didWeb = generateDidWeb(certificateSubject);
 
         ParticipantDidDataEntity entity = storeDidDocument(didWeb, request.getCertificates(), request.getAliases());
-        List<String> verificationMethodIds = new ArrayList<>(
-            entity.getVerificationMethods().stream().map(vm -> entity.getDid() + "#" + vm.getCertificateId()).toList());
-        if (commonVmEnabled) {
-            verificationMethodIds.add(entity.getDid() + "#" + commonVmId);
-        }
 
-        return new ParticipantDidTo(entity.getDid(), verificationMethodIds, entity.getAliases());
+        return new ParticipantDidTo(entity.getDid(), getVmIdsFromParticipantEntity(entity), entity.getAliases());
     }
 
     /**
@@ -78,7 +73,7 @@ public class DidManagementServiceImpl implements DidManagementService {
      */
     @Override
     @Transactional
-    public void updateParticipantDidWeb(ParticipantDidUpdateRequestTo request) {
+    public ParticipantDidTo updateParticipantDidWeb(ParticipantDidUpdateRequestTo request) {
 
         String didWeb = request.getDid();
 
@@ -86,19 +81,21 @@ public class DidManagementServiceImpl implements DidManagementService {
             throw new RequestArgumentException("Missing or empty did.");
         }
 
-        ParticipantDidDataEntity participantDidData = participantDidDataRepository.findByDid(didWeb);
+        ParticipantDidDataEntity entity = participantDidDataRepository.findByDid(didWeb);
 
-        if (participantDidData == null) {
+        if (entity == null) {
             throw new ParticipantNotFoundException("Did does not exist in the database.");
         }
 
         if (request.getAliases() != null) {
-            participantDidData.setAliases(request.getAliases());
+            entity.setAliases(request.getAliases());
         }
 
         if (request.getCertificates() != null) {
-            participantDidData.setVerificationMethods(getVerificationMethodEntities(request.getCertificates()));
+            entity.setVerificationMethods(getVerificationMethodEntities(request.getCertificates()));
         }
+
+        return new ParticipantDidTo(entity.getDid(), getVmIdsFromParticipantEntity(entity), entity.getAliases());
     }
 
     /**
@@ -115,6 +112,16 @@ public class DidManagementServiceImpl implements DidManagementService {
         }
 
         deleteDidDocument(did);
+    }
+
+    private List<String> getVmIdsFromParticipantEntity(ParticipantDidDataEntity entity) {
+
+        List<String> verificationMethodIds = new ArrayList<>(
+            entity.getVerificationMethods().stream().map(vm -> entity.getDid() + "#" + vm.getCertificateId()).toList());
+        if (commonVmEnabled) {
+            verificationMethodIds.add(entity.getDid() + "#" + commonVmId);
+        }
+        return verificationMethodIds;
     }
 
     private void deleteDidDocument(String did) {
