@@ -3,6 +3,7 @@ package eu.possiblex.didwebservice.service;
 import ch.qos.logback.core.util.StringUtil;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
+import eu.possiblex.didwebservice.models.exceptions.CertificateNotFoundException;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import eu.possiblex.didwebservice.utils.DidUtils;
@@ -56,12 +57,19 @@ public class CertificateServiceImpl implements CertificateService {
         ParticipantDidDataEntity participantDidDataEntity = participantDidDataRepository.findByDid(didWeb);
 
         if (participantDidDataEntity == null) {
-            throw new ParticipantNotFoundException("Participant could not be found.");
+            throw new ParticipantNotFoundException("Participant with did " + didWeb + " could not be found.");
         }
 
-        return participantDidDataEntity.getVerificationMethods().stream()
+        String certificate = participantDidDataEntity.getVerificationMethods().stream()
             .filter(vm -> vm.getCertificateId().equals(certId)).map(VerificationMethodEntity::getCertificate)
             .findFirst().orElse(null);
+
+        if (certificate == null) {
+            throw new CertificateNotFoundException(
+                "Certificate with id " + certId + " for participant with did " + didWeb + " could not be found.");
+        }
+
+        return certificate;
     }
 
     /**

@@ -24,7 +24,8 @@ public interface DidController {
         @Parameter(name = "participantId", description = "The participant ID for which to get the did document", example = "someorgltd"),
         @Parameter(name = "certificateId", description = "The certificate ID specific to this participant", example = "someorgltd-example-cert") }, responses = {
         @ApiResponse(content = @Content(schema = @Schema(description = "X.509 certificate", example = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"))) })
-    @GetMapping(value = "/participant/{participantId}/{certificateId}.pem", produces = "application/x-x509-ca-cert")
+    @GetMapping(value = "/participant/{participantId}/{certificateId}.pem", produces = { "application/x-x509-ca-cert",
+        "application/json" })
     String getCertificate(@PathVariable(value = "participantId") String participantId,
         @PathVariable(value = "certificateId") String certificateId);
 
@@ -36,6 +37,7 @@ public interface DidController {
     @Operation(summary = "Get common dataspace certificate", tags = {
         "Public" }, description = "Get the common dataspace certificate", responses = {
         @ApiResponse(content = @Content(schema = @Schema(description = "X.509 certificate", example = "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"))) })
-    @GetMapping(value = "/.well-known/" + DidUtils.COMMON_CERTIFICATE_FILE, produces = "application/x-x509-ca-cert")
+    @GetMapping(value = "/.well-known/" + DidUtils.COMMON_CERTIFICATE_FILE, produces = { "application/x-x509-ca-cert",
+        "application/json" })
     String getCommonCertificate();
 }

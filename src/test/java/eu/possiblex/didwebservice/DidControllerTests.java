@@ -112,10 +112,11 @@ class DidControllerTests {
     }
 
     @Test
-    void getCommonCertificateNotFound() throws Exception {
+    void getParticipantCertificateNotFound() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/participant/unknown-participant/cert.ss.pem")
-                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.parseMediaType("application/x-x509-ca-cert")))
-            .andDo(print()).andExpect(status().isNotFound());
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"), MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isNotFound());
     }
 }

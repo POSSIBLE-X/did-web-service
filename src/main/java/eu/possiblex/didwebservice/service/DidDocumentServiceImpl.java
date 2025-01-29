@@ -108,9 +108,15 @@ public class DidDocumentServiceImpl implements DidDocumentService {
             String certificateUrl = DidUtils.getDidDocumentUri(didWebParticipant)
                 .replace(DidUtils.DID_DOCUMENT_FILE, vmEntity.getCertificateId() + ".pem");
             String verificationMethodId = didWebParticipant + "#" + vmEntity.getCertificateId();
-            didDocument.getVerificationMethod().add(
-                getVerificationMethod(didWebParticipant, verificationMethodId, certificateUrl,
-                    vmEntity.getCertificate()));
+            try {
+                didDocument.getVerificationMethod().add(
+                    getVerificationMethod(didWebParticipant, verificationMethodId, certificateUrl,
+                        vmEntity.getCertificate()));
+            } catch (PemConversionException e) {
+                throw new DidDocumentGenerationException(
+                    "Failed to convert certificate to verification method: " + e.getMessage());
+            }
+
         }
         if (commonVmEnabled) {
             // add common federation verification method
