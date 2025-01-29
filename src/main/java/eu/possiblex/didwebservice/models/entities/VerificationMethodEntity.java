@@ -14,7 +14,6 @@ public class VerificationMethodEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO make unique
     private String certificateId;
 
     @Lob

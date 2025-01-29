@@ -189,7 +189,10 @@ public class DidManagementServiceImpl implements DidManagementService {
         data.setDid(did);
 
         data.setVerificationMethods(getVerificationMethodEntities(certificates));
-        data.setAliases(aliases);
+
+        if (aliases != null) {
+            data.setAliases(aliases);
+        }
 
         return participantDidDataRepository.save(data);
     }
