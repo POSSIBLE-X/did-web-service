@@ -69,10 +69,10 @@ public class DidControllerImpl implements DidController {
      */
     @Override
     public String getCertificate(@PathVariable(value = "participantId") String participantId,
-        @PathVariable(value = "certId") String certId) {
+        @PathVariable(value = "certificateId") String certificateId) {
 
         try {
-            return certificateService.getParticipantCertificate(participantId, certId);
+            return certificateService.getParticipantCertificate(participantId, certificateId);
         } catch (ParticipantNotFoundException e) {
             throw new ResponseStatusException(NOT_FOUND, e.getMessage());
         }
