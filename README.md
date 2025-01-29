@@ -2,10 +2,10 @@
 
 The DID Web service is a microservice in the POSSIBLE dataspace which handles:
 
-- Provision of a new did:web that can be used for signing and verification.
-- Provision of the DID document for a did:web that the service manages.
-  - Currently, the DID document lists one verification method that refers to the common public key.
-- Provision of the certificate associated with a did:web that the service manages.
+- Provisioning of a new did:web that can be used for signing and verification.
+- Deleting and updating existing did:web identities.
+- Provisioning of the DID document for a did:web that the service manages.
+- Provisioning of the certificates associated with a did:web that the service manages.
 
 ## Structure
 
@@ -16,6 +16,7 @@ The DID Web service is a microservice in the POSSIBLE dataspace which handles:
 │   ├── models          # internal data models
 │   ├── repositories    # DAOs for accessing the stored data
 │   ├── service         # internal services for processing data from the controller layer
+│   ├── utils           # shared static functionality
 ```
 
 ## Configuration
@@ -23,11 +24,13 @@ The DID Web service is a microservice in the POSSIBLE dataspace which handles:
 For a full list of configuration options (including Spring/JPA options) please see the
 [application.yml](src/main/resources/application.yml).
 
-| Key              | Description                                                                                                                   | Default   |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------|
-| server.port      | Sets the https port under which the service will run                                                                          | 4443      |
-| did-domain       | Domain of the server hosting this DID-Service, used to reference it in the did documents                                      | localhost |
-| common-cert-path | path to a certificate that should be listed in all generated did documents (e.g. for a common public key within a federation) |           |
+| Key                                  | Description                                                                                                                                                       | Default   |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| server.port                          | Sets the https port under which the service will run                                                                                                              | 4443      |
+| did-web-domain                       | Domain of the server hosting this DID-Web-Service, used to reference it in the did documents                                                                      | localhost |
+| common-verification-method.enabled   | if enabled, all did:web identities hosted by this service will reference a common (federation) verification method in addition to their own verification methods. | true      |
+| common-verification-method.cert-path | see previous, path to the common certificate that corresponds to the common verification method                                                                   |           |
+| common-verification-method.id        | see previous, id of the common verification method in each did document                                                                                           |           |
 
 ## Run
 
@@ -38,12 +41,15 @@ For a full list of configuration options (including Spring/JPA options) please s
 
 The following endpoints are made available by the DID service:
 
-| Endpoint                      | Description                                                                                                                                                                         |
-|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| POST /internal/didweb         | internal non-public endpoint that generates a new did-web identity on demand given the subject in the payload                                                                       |
-| PATCH /internal/didweb        | internal non-public endpoint that updates an existing did-web identity given the non-null content in the payload. Currently this only supports adding/removing aliases for the did. |
-| DELETE /internal/didweb/{did} | internal non-public endpoint that deletes an existing did-web identity with the id in the content in the payload.                                                                   |
-| /participant/{id}/did.json    | returns the DID document for a given participant id                                                                                                                                 |
-| /.well-known/did.json         | returns a common did document for the dataspace federation identity                                                                                                                 |
-| /.well-known/cert.ss.pem      | returns a common certificate for the dataspace federation identity (currently referenced in all generated did documents)                                                            |
+| Endpoint                                         | Description                                                                                                   |
+|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| POST /internal/didweb                            | management endpoint that generates a new did-web identity on demand given the subject and data in the payload |
+| PATCH /internal/didweb                           | management endpoint that updates an existing did-web identity given the non-null content in the payload.      |
+| DELETE /internal/didweb/{did}                    | management endpoint that deletes an existing did-web identity with the given did.                             |
+| /participant/{participantId}/did.json            | returns the DID document for a given participant id.                                                          |
+| /participant/{participantId}/{certificateId}.pem | returns the participant specific certificate with the given id.                                               |
+| /.well-known/did.json                            | returns the common did document for the dataspace federation identity.                                        |
+| /.well-known/cert.ss.pem                         | returns the common certificate for the dataspace federation identity.                                         |
 
+For a more detailed documentation, check out the Swagger UI that is available upon starting the app
+at https://localhost:4443/swagger-ui/index.html .
