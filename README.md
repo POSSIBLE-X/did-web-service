@@ -51,5 +51,5 @@ The following endpoints are made available by the DID service:
 | /.well-known/did.json                            | returns the common did document for the dataspace federation identity.                                        |
 | /.well-known/cert.ss.pem                         | returns the common certificate for the dataspace federation identity.                                         |
 
-For a more detailed documentation, check out the Swagger UI that is available upon starting the app
+For a more detailed API documentation, check out the Swagger UI that is available upon starting the app
 at https://localhost:4443/swagger-ui/index.html .
