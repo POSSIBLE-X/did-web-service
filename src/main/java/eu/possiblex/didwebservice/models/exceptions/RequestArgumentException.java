@@ -16,7 +16,7 @@
 
 package eu.possiblex.didwebservice.models.exceptions;
 
-public class RequestArgumentException extends Exception {
+public class RequestArgumentException extends RuntimeException {
 
     public RequestArgumentException(String message) {
 

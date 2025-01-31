@@ -17,16 +17,26 @@
 package eu.possiblex.didwebservice.models.did;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@JsonPropertyOrder({"kty", "n", "e", "alg", "x5u"})
+@JsonPropertyOrder({ "kty", "n", "e", "alg", "x5u" })
 public class PublicJwk {
+    @Schema(description = "The family of cryptographic algorithms used with the key.", example = "RSA")
     private String kty;
+
+    @Schema(description = "The modulus for the RSA public key", example = "12345")
     private String n;
+
+    @Schema(description = "The exponent for the RSA public key", example = "AQAB")
     private String e;
+
+    @Schema(description = "The specific cryptographic algorithm used with the key.", example = "RS256")
     private String alg;
+
+    @Schema(description = "The URL to the X.509 certificate chain", example = "https://example.com/cert.pem")
     private String x5u;
 }

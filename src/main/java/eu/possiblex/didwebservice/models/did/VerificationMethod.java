@@ -18,6 +18,7 @@ package eu.possiblex.didwebservice.models.did;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,12 +26,21 @@ import java.util.List;
 
 @Getter
 @Setter
-@JsonPropertyOrder({"@context", "id", "type", "controller", "publicKeyJwk"})
+@JsonPropertyOrder({ "@context", "id", "type", "controller", "publicKeyJwk" })
 public class VerificationMethod {
     @JsonProperty("@context")
-    private List<String> context;
+    @Schema(description = "JSON-LD context", example = "[\"https://w3c-ccg.github.io/lds-jws2020/contexts/v1/\"]")
+    private List<String> context = List.of("https://w3c-ccg.github.io/lds-jws2020/contexts/v1/");
+
+    @Schema(description = "Verification method ID", example = "did:web:example.com:participant:someorgltd#someorgltd-example-cert")
     private String id;
-    private String type;
+
+    @Schema(description = "Verification method type", example = "JsonWebKey2020")
+    private String type = "JsonWebKey2020";
+
+    @Schema(description = "Verification method controller", example = "did:web:example.com:participant:someorgltd")
     private String controller;
+
+    @Schema(description = "Public JSON Web Key")
     private PublicJwk publicKeyJwk;
 }

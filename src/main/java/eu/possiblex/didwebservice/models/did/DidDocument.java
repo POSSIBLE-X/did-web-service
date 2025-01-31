@@ -18,21 +18,30 @@ package eu.possiblex.didwebservice.models.did;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
+@EqualsAndHashCode
 @JsonPropertyOrder({ "@context", "id", "verificationMethod" })
 public class DidDocument {
     @JsonProperty("@context")
-    private List<String> context;
+    @Schema(description = "JSON-LD context", example = "[\"https://www.w3.org/ns/did/v1\", \"https://w3id.org/security/suites/jws-2020/v1\"]")
+    private List<String> context = List.of("https://www.w3.org/ns/did/v1",
+        "https://w3id.org/security/suites/jws-2020/v1");
 
+    @Schema(description = "did:web identity", example = "did:web:example.com:participant:someorgltd")
     private String id;
 
-    private List<VerificationMethod> verificationMethod;
+    @Schema(description = "List of verification methods associated with this identity")
+    private List<VerificationMethod> verificationMethod = new ArrayList<>();
 
+    @Schema(description = "List of aliases associated with this identity", example = "[\"https://someorganization.com\"]")
     private List<String> alsoKnownAs;
 }

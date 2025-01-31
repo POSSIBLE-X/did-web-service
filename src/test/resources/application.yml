@@ -12,5 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-did-domain: "localhost:8443"
-common-cert-path: ""
+did-web-domain: "localhost:8443"
+common-verification-method:
+  enabled: true
+  cert-path: ""
+  id: "some-id"

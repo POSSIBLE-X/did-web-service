@@ -16,8 +16,8 @@
 
 package eu.possiblex.didwebservice.models.exceptions;
 
-public class DidDocumentGenerationException extends RuntimeException {
-    public DidDocumentGenerationException(String message) {
+public class CertificateNotFoundException extends RuntimeException {
+    public CertificateNotFoundException(String message) {
 
         super(message);
     }

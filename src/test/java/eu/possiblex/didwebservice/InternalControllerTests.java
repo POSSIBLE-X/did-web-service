@@ -22,7 +22,7 @@ import eu.possiblex.didwebservice.controller.InternalControllerImpl;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
-import eu.possiblex.didwebservice.service.DidService;
+import eu.possiblex.didwebservice.service.DidManagementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,19 +42,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class InternalControllerTests {
     @MockBean
-    private DidService didService;
+    private DidManagementService didManagementService;
 
     @Autowired
     private MockMvc mvc;
 
     @BeforeEach
-    public void beforeEach() throws Exception {
+    public void beforeEach() {
 
         ParticipantDidTo dto = new ParticipantDidTo();
         ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();
 
-        lenient().when(didService.generateParticipantDidWeb(any())).thenReturn(dto);
-        lenient().when(didService.generateParticipantDidWeb(emptyRequest)).thenThrow(RequestArgumentException.class);
+        lenient().when(didManagementService.generateParticipantDidWeb(any())).thenReturn(dto);
+        lenient().when(didManagementService.generateParticipantDidWeb(emptyRequest))
+            .thenThrow(RequestArgumentException.class);
     }
 
     @Test

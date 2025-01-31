@@ -19,17 +19,19 @@ package eu.possiblex.didwebservice.models.entities;
 import eu.possiblex.didwebservice.repositories.StringListConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class ParticipantDidData {
+@AllArgsConstructor
+public class ParticipantDidDataEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,6 +40,10 @@ public class ParticipantDidData {
     @NotNull
     private String did;
 
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<VerificationMethodEntity> verificationMethods = new ArrayList<>();
+
     @Convert(converter = StringListConverter.class)
-    private List<String> aliases;
+    private List<String> aliases = new ArrayList<>();
+
 }
