@@ -18,11 +18,13 @@ package eu.possiblex.didwebservice.models.did;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode
 @JsonPropertyOrder({ "kty", "n", "e", "alg", "x5u" })
 public class PublicJwk {
     @Schema(description = "The family of cryptographic algorithms used with the key.", example = "RSA")

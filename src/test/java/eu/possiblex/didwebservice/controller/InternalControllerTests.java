@@ -14,49 +14,37 @@
  *  limitations under the License.
  */
 
-package eu.possiblex.didwebservice;
+package eu.possiblex.didwebservice.controller;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import eu.possiblex.didwebservice.controller.InternalControllerImpl;
+import eu.possiblex.didwebservice.config.BoundaryExceptionHandler;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.service.DidManagementService;
-import org.junit.jupiter.api.BeforeEach;
+import eu.possiblex.didwebservice.service.DidManagementServiceFake;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ InternalControllerImpl.class })
+@ContextConfiguration(classes = { InternalControllerImpl.class, BoundaryExceptionHandler.class,
+    InternalControllerTests.TestConfig.class })
 @AutoConfigureMockMvc
 class InternalControllerTests {
-    @MockBean
-    private DidManagementService didManagementService;
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    public void beforeEach() {
-
-        ParticipantDidTo dto = new ParticipantDidTo();
-        ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();
-
-        lenient().when(didManagementService.generateParticipantDidWeb(any())).thenReturn(dto);
-        lenient().when(didManagementService.generateParticipantDidWeb(emptyRequest))
-            .thenThrow(RequestArgumentException.class);
-    }
 
     @Test
     void generateDidOk() throws Exception {
@@ -93,5 +81,15 @@ class InternalControllerTests {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public DidManagementService didManagementService() {
+
+            return Mockito.spy(new DidManagementServiceFake());
+        }
+
     }
 }
