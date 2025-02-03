@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eu.possiblex.didwebservice.config.BoundaryExceptionHandler;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.service.DidManagementService;
 import eu.possiblex.didwebservice.service.DidManagementServiceFake;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -62,6 +65,44 @@ class InternalControllerTests {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void updateDidOk() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(getValidUpdateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void updateDidBadRequest() throws Exception {
+
+        ParticipantDidUpdateRequestTo to = getValidUpdateRequest();
+        to.setDid(null);
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(to)).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateDidNotFound() throws Exception {
+
+        ParticipantDidUpdateRequestTo to = getValidUpdateRequest();
+        to.setDid("did:web:example.com:participant:unknown");
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(to)).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteDidOkay() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.delete("/internal/didweb/123").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(getValidUpdateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isOk());
+    }
+
     private ParticipantDidCreateRequestTo getEmptyCreateRequest() {
 
         return new ParticipantDidCreateRequestTo();
@@ -71,6 +112,14 @@ class InternalControllerTests {
 
         ParticipantDidCreateRequestTo to = new ParticipantDidCreateRequestTo();
         to.setSubject("valid");
+        return to;
+    }
+
+    private ParticipantDidUpdateRequestTo getValidUpdateRequest() {
+
+        ParticipantDidUpdateRequestTo to = new ParticipantDidUpdateRequestTo();
+        to.setDid("did:web:example.com:participant:123");
+        to.setAliases(List.of("alias1", "alias2"));
         return to;
     }
 

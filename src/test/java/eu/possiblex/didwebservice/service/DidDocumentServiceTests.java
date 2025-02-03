@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
@@ -58,9 +59,11 @@ class DidDocumentServiceTests {
     void getParticipantDidDocumentCorrectly() {
 
         ParticipantDidDataEntity participantDidDataEntity = getTestParticipantCertificate();
-        List<String> vmIdsWithCommonVm = new ArrayList<>(
-            participantDidDataEntity.getVerificationMethods().stream().map(VerificationMethodEntity::getCertificateId)
-                .toList());
+        participantDidDataEntity.setAliases(List.of("alias1", "alias2"));
+        participantDidDataEntity.setVerificationMethods(List.of(new VerificationMethodEntity(null, "vm1", "cert1"),
+            new VerificationMethodEntity(null, "vm2", "cert2")));
+        List<String> vmIdsWithCommonVm = new ArrayList<>(participantDidDataEntity.getVerificationMethods().stream()
+            .map(vm -> participantDidDataEntity.getDid() + "#" + vm.getCertificateId()).toList());
         vmIdsWithCommonVm.add(participantDidDataEntity.getDid() + "#" + commonVerificationMethodId);
         participantDidDataRepository.save(participantDidDataEntity);
 
@@ -68,7 +71,7 @@ class DidDocumentServiceTests {
 
         assertEquals(actual.getId(), participantDidDataEntity.getDid());
         assertIterableEquals(actual.getAlsoKnownAs(), participantDidDataEntity.getAliases());
-        assertIterableEquals(vmIdsWithCommonVm,
+        assertThat(vmIdsWithCommonVm).containsExactlyInAnyOrderElementsOf(
             actual.getVerificationMethod().stream().map(VerificationMethod::getId).toList());
     }
 

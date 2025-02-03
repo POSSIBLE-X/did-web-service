@@ -3,6 +3,7 @@ package eu.possiblex.didwebservice.service;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
+import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 
 import java.util.List;
@@ -22,6 +23,14 @@ public class DidManagementServiceFake implements DidManagementService {
 
     @Override
     public ParticipantDidTo updateParticipantDidWeb(ParticipantDidUpdateRequestTo request) {
+
+        if (request.getDid() == null) {
+            throw new RequestArgumentException("empty did");
+        }
+
+        if (request.getDid().equals("did:web:example.com:participant:unknown")) {
+            throw new ParticipantNotFoundException("did not found");
+        }
 
         return ParticipantDidTo.builder().did(request.getDid())
             .verificationMethodIds(List.of(request.getDid() + "#somemethod")).aliases(request.getAliases()).build();

@@ -83,9 +83,18 @@ class DidControllerTests {
     }
 
     @Test
-    void getParticipantCertificateNotFound() throws Exception {
+    void getParticipantNotFound() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/participant/unknown-participant/cert.ss.pem")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"), MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getParticipantCertificateNotFound() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.get("/participant/some-participant/unknown-certificate.pem")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.parseMediaType("application/x-x509-ca-cert"), MediaType.APPLICATION_JSON)).andDo(print())
             .andExpect(status().isNotFound());

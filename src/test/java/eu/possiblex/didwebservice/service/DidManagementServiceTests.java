@@ -7,6 +7,7 @@ import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class DidManagementServiceTests {
 
     @Value("${did-web-domain}")
     private String didDomain;
+
+    @Value("${common-verification-method.id}")
+    private String commonVerificationMethodId;
 
     @Captor
     private ArgumentCaptor<ParticipantDidDataEntity> certificateArgumentCaptor;
@@ -92,6 +96,26 @@ class DidManagementServiceTests {
     }
 
     @Test
+    void generateDidCollisionWithCommonId() {
+
+        ParticipantDidCreateRequestTo request = new ParticipantDidCreateRequestTo();
+        request.setSubject("ABC Company");
+        request.setCertificates(Map.of(commonVerificationMethodId, "certContent"));
+
+        assertThrows(RequestArgumentException.class, () -> sut.generateParticipantDidWeb(request));
+    }
+
+    @Test
+    void generateDidBadRequest() {
+
+        ParticipantDidCreateRequestTo request = new ParticipantDidCreateRequestTo();
+        request.setSubject(null);
+        request.setCertificates(Map.of("certId", "certContent"));
+
+        assertThrows(RequestArgumentException.class, () -> sut.generateParticipantDidWeb(request));
+    }
+
+    @Test
     void deleteExistingDidCorrectly() {
 
         String did = "did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c";
@@ -117,6 +141,12 @@ class DidManagementServiceTests {
         sut.removeParticipantDidWeb("did:web:localhost%3A8443:participant:c0334816-5608-387d-b935-7894158d4b1c");
 
         verify(participantDidDataRepository, never()).deleteByDid(any());
+    }
+
+    @Test
+    void deleteDidBadRequest() {
+
+        assertThrows(RequestArgumentException.class, () -> sut.removeParticipantDidWeb(""));
     }
 
     @Test
@@ -151,6 +181,15 @@ class DidManagementServiceTests {
         request.setAliases(List.of("alias1", "alias2"));
 
         assertThrows(ParticipantNotFoundException.class, () -> sut.updateParticipantDidWeb(request));
+    }
+
+    @Test
+    void updateDidBadRequest() {
+
+        ParticipantDidUpdateRequestTo request = new ParticipantDidUpdateRequestTo();
+        request.setDid(null);
+
+        assertThrows(RequestArgumentException.class, () -> sut.updateParticipantDidWeb(request));
     }
 
     @TestConfiguration
