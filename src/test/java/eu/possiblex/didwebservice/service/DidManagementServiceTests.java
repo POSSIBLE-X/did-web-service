@@ -8,6 +8,7 @@ import eu.possiblex.didwebservice.models.entities.ParticipantDidDataEntity;
 import eu.possiblex.didwebservice.models.entities.VerificationMethodEntity;
 import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
 import eu.possiblex.didwebservice.repositories.ParticipantDidDataRepository;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 @ContextConfiguration(classes = { DidManagementServiceTests.TestConfig.class, DidManagementServiceImpl.class,
     DidWebServiceApplication.class })
+@Transactional
 class DidManagementServiceTests {
 
     @Autowired
@@ -49,7 +51,7 @@ class DidManagementServiceTests {
     private ArgumentCaptor<String> didStringArgumentCaptor;
 
     @Test
-    void generateDidCorrectly() {
+    void generateDidWithoutOptionalsCorrectly() {
 
         String didRegex = "did:web:" + didDomain.replaceFirst(":", "%3A") + ":participant:[-A-Za-z0-9]*";
 
@@ -64,6 +66,29 @@ class DidManagementServiceTests {
         ParticipantDidDataEntity participant = certificateArgumentCaptor.getValue();
 
         assertTrue(participant.getDid().matches(didRegex));
+    }
+
+    @Test
+    void generateDidWithOptionalsCorrectly() {
+
+        String didRegex = "did:web:" + didDomain.replaceFirst(":", "%3A") + ":participant:[-A-Za-z0-9]*";
+
+        ParticipantDidCreateRequestTo request = new ParticipantDidCreateRequestTo();
+        request.setSubject("ABC Company");
+        request.setAliases(List.of("alias1", "alias2"));
+        request.setCertificates(Map.of("certId", "certContent"));
+
+        ParticipantDidTo dto = sut.generateParticipantDidWeb(request);
+
+        assertTrue(dto.getDid().matches(didRegex));
+
+        verify(participantDidDataRepository).save(certificateArgumentCaptor.capture());
+        ParticipantDidDataEntity participant = certificateArgumentCaptor.getValue();
+
+        assertTrue(participant.getDid().matches(didRegex));
+        assertIterableEquals(request.getAliases(), participant.getAliases());
+        assertIterableEquals(request.getCertificates().keySet(),
+            participant.getVerificationMethods().stream().map(VerificationMethodEntity::getCertificateId).toList());
     }
 
     @Test

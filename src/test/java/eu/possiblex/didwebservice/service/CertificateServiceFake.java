@@ -11,7 +11,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 public class CertificateServiceFake implements CertificateService {
-    private static final String EXAMPLE_CERTIFICATE = """
+    public static final String EXAMPLE_CERTIFICATE = """
         -----BEGIN CERTIFICATE-----
         MIIFbTCCA1WgAwIBAgIUcPeWCC/YFB6PL5MDKpMRqj10QBkwDQYJKoZIhvcNAQEL
         BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
