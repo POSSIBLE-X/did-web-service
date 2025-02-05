@@ -14,49 +14,40 @@
  *  limitations under the License.
  */
 
-package eu.possiblex.didwebservice;
+package eu.possiblex.didwebservice.controller;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import eu.possiblex.didwebservice.controller.InternalControllerImpl;
+import eu.possiblex.didwebservice.config.BoundaryExceptionHandler;
 import eu.possiblex.didwebservice.models.dto.ParticipantDidCreateRequestTo;
-import eu.possiblex.didwebservice.models.dto.ParticipantDidTo;
-import eu.possiblex.didwebservice.models.exceptions.RequestArgumentException;
+import eu.possiblex.didwebservice.models.dto.ParticipantDidUpdateRequestTo;
 import eu.possiblex.didwebservice.service.DidManagementService;
-import org.junit.jupiter.api.BeforeEach;
+import eu.possiblex.didwebservice.service.DidManagementServiceFake;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
+import java.util.List;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ InternalControllerImpl.class })
+@ContextConfiguration(classes = { InternalControllerImpl.class, BoundaryExceptionHandler.class,
+    InternalControllerTests.TestConfig.class })
 @AutoConfigureMockMvc
 class InternalControllerTests {
-    @MockBean
-    private DidManagementService didManagementService;
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    public void beforeEach() {
-
-        ParticipantDidTo dto = new ParticipantDidTo();
-        ParticipantDidCreateRequestTo emptyRequest = getEmptyCreateRequest();
-
-        lenient().when(didManagementService.generateParticipantDidWeb(any())).thenReturn(dto);
-        lenient().when(didManagementService.generateParticipantDidWeb(emptyRequest))
-            .thenThrow(RequestArgumentException.class);
-    }
 
     @Test
     void generateDidOk() throws Exception {
@@ -74,6 +65,44 @@ class InternalControllerTests {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void updateDidOk() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(getValidUpdateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void updateDidBadRequest() throws Exception {
+
+        ParticipantDidUpdateRequestTo to = getValidUpdateRequest();
+        to.setDid(null);
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(to)).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateDidNotFound() throws Exception {
+
+        ParticipantDidUpdateRequestTo to = getValidUpdateRequest();
+        to.setDid("did:web:example.com:participant:unknown");
+
+        mvc.perform(MockMvcRequestBuilders.patch("/internal/didweb").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(to)).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteDidOkay() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.delete("/internal/didweb/123").contentType(MediaType.APPLICATION_JSON)
+                .content(objectAsJsonString(getValidUpdateRequest())).accept(MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isOk());
+    }
+
     private ParticipantDidCreateRequestTo getEmptyCreateRequest() {
 
         return new ParticipantDidCreateRequestTo();
@@ -86,6 +115,14 @@ class InternalControllerTests {
         return to;
     }
 
+    private ParticipantDidUpdateRequestTo getValidUpdateRequest() {
+
+        ParticipantDidUpdateRequestTo to = new ParticipantDidUpdateRequestTo();
+        to.setDid("did:web:example.com:participant:123");
+        to.setAliases(List.of("alias1", "alias2"));
+        return to;
+    }
+
     private String objectAsJsonString(final Object obj) {
 
         try {
@@ -93,5 +130,15 @@ class InternalControllerTests {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public DidManagementService didManagementService() {
+
+            return Mockito.spy(new DidManagementServiceFake());
+        }
+
     }
 }

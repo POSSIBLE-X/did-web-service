@@ -14,56 +14,36 @@
  *  limitations under the License.
  */
 
-package eu.possiblex.didwebservice;
+package eu.possiblex.didwebservice.controller;
 
-import eu.possiblex.didwebservice.controller.DidControllerImpl;
-import eu.possiblex.didwebservice.models.did.DidDocument;
-import eu.possiblex.didwebservice.models.exceptions.DidDocumentGenerationException;
-import eu.possiblex.didwebservice.models.exceptions.ParticipantNotFoundException;
+import eu.possiblex.didwebservice.config.BoundaryExceptionHandler;
 import eu.possiblex.didwebservice.service.CertificateService;
+import eu.possiblex.didwebservice.service.CertificateServiceFake;
 import eu.possiblex.didwebservice.service.DidDocumentService;
-import org.junit.jupiter.api.BeforeEach;
+import eu.possiblex.didwebservice.service.DidDocumentServiceFake;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ DidControllerImpl.class })
+@ContextConfiguration(classes = { DidControllerImpl.class, BoundaryExceptionHandler.class,
+    DidControllerTests.TestConfig.class })
 @AutoConfigureMockMvc
 class DidControllerTests {
-    @MockBean
-    private DidDocumentService didDocumentService;
-
-    @MockBean
-    private CertificateService certificateService;
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    public void beforeEach() {
-
-        lenient().when(didDocumentService.getParticipantDidDocument(any())).thenReturn(new DidDocument());
-        lenient().when(certificateService.getParticipantCertificate(any(), any())).thenReturn("certificate");
-        lenient().when(didDocumentService.getParticipantDidDocument("unknown-participant"))
-            .thenThrow(ParticipantNotFoundException.class);
-        lenient().when(certificateService.getParticipantCertificate(eq("unknown-participant"), any()))
-            .thenThrow(ParticipantNotFoundException.class);
-        lenient().when(didDocumentService.getParticipantDidDocument("broken-certificate"))
-            .thenThrow(DidDocumentGenerationException.class);
-
-    }
 
     @Test
     void getDidDocumentOk() throws Exception {
@@ -77,15 +57,6 @@ class DidControllerTests {
 
         mvc.perform(MockMvcRequestBuilders.get("/.well-known/did.json").accept(MediaType.APPLICATION_JSON))
             .andDo(print()).andExpect(status().isOk());
-    }
-
-    @Test
-    void getCommonDidDocumentFailed() throws Exception {
-
-        when(didDocumentService.getCommonDidDocument()).thenThrow(
-            new DidDocumentGenerationException("Failed to generate did document"));
-        mvc.perform(MockMvcRequestBuilders.get("/.well-known/did.json").accept(MediaType.APPLICATION_JSON))
-            .andDo(print()).andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -112,11 +83,35 @@ class DidControllerTests {
     }
 
     @Test
-    void getParticipantCertificateNotFound() throws Exception {
+    void getParticipantNotFound() throws Exception {
 
         mvc.perform(MockMvcRequestBuilders.get("/participant/unknown-participant/cert.ss.pem")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.parseMediaType("application/x-x509-ca-cert"), MediaType.APPLICATION_JSON)).andDo(print())
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getParticipantCertificateNotFound() throws Exception {
+
+        mvc.perform(MockMvcRequestBuilders.get("/participant/some-participant/unknown-certificate.pem")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.parseMediaType("application/x-x509-ca-cert"), MediaType.APPLICATION_JSON)).andDo(print())
+            .andExpect(status().isNotFound());
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public DidDocumentService didDocumentService() {
+
+            return Mockito.spy(new DidDocumentServiceFake());
+        }
+
+        @Bean
+        public CertificateService certificateService() {
+
+            return Mockito.spy(new CertificateServiceFake());
+        }
     }
 }

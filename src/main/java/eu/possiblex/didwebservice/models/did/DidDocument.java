@@ -19,20 +19,21 @@ package eu.possiblex.didwebservice.models.did;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EqualsAndHashCode
 @JsonPropertyOrder({ "@context", "id", "verificationMethod" })
 public class DidDocument {
     @JsonProperty("@context")
     @Schema(description = "JSON-LD context", example = "[\"https://www.w3.org/ns/did/v1\", \"https://w3id.org/security/suites/jws-2020/v1\"]")
+    @Builder.Default
     private List<String> context = List.of("https://www.w3.org/ns/did/v1",
         "https://w3id.org/security/suites/jws-2020/v1");
 
