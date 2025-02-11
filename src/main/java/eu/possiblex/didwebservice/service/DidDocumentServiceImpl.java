@@ -57,10 +57,12 @@ public class DidDocumentServiceImpl implements DidDocumentService {
 
         String didWeb = didWebUrlService.getDidWebForParticipant(id);
 
+        log.info("Retrieving DID document for participant with DID: {}", didWeb);
+
         ParticipantDidDataEntity participantDidDataEntity = participantDidDataRepository.findByDid(didWeb);
 
         if (participantDidDataEntity == null) {
-            throw new ParticipantNotFoundException("Participant could not be found.");
+            throw new ParticipantNotFoundException("Participant with DID " + didWeb + " could not be found.");
         }
 
         try {
