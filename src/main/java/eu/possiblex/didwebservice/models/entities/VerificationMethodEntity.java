@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "verification_method")
 public class VerificationMethodEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

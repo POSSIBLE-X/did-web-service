@@ -30,6 +30,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "participant_did_data")
 public class ParticipantDidDataEntity {
 
     @Id
