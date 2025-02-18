@@ -1,6 +1,6 @@
-# POSSIBLE DID Web Service
+# POSSIBLE-X DID Web Service
 
-The DID Web service is a microservice in the POSSIBLE dataspace which handles:
+The DID Web Service is a microservice in the POSSIBLE-X Dataspace which handles:
 
 - Provisioning of a new did:web that can be used for signing and verification.
 - Deleting and updating existing did:web identities.
